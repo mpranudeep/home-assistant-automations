@@ -69,7 +69,7 @@ export default class PageContentReader {
 
   private async fetchPageContentWithPuppeteer(url: string): Promise<string> {
    // @ts-ignore
-    const browser = await puppeteer.launch({ headless: 'new', executablePath: '/usr/bin/chromium' });
+    const browser = await puppeteer.launch({ headless: 'new', executablePath: '/usr/bin/chromium' ,  args: ['--no-sandbox', '--disable-setuid-sandbox']});
     const page = await browser.newPage();
 
     await page.setUserAgent(
