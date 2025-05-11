@@ -1,0 +1,15 @@
+[
+    {
+      "masterSwitch": "switch.bedroom_switch_4",
+      "replicaSwitches": ["switch.bedroom_nightstand_1_switch_4"]
+    },
+    {
+      "masterSwitch": "switch.bedroom_switch_2",
+      "replicaSwitches": ["switch.bedroom_nightstand_1_switch_2"]
+    },
+    {
+      "masterSwitch": "switch.bedroom_switch_1",
+      "replicaSwitches": ["switch.bedroom_nightstand_1_switch_1"]
+    }
+  ]
+  

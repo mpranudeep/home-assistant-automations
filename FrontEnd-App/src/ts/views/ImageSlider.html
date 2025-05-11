@@ -1,0 +1,74 @@
+<div class="oj-hybrid-padding">
+    <style>
+        .slider-container {
+            width: 100vw; /* Viewport width */
+            height: 100vh; /* Viewport height */
+        }
+
+        img {
+            width: auto;
+            height: auto;
+            object-fit: contain; /* Ensures the image fits the container without cropping */
+        }
+
+        body{
+            background-color : black !important;
+               transition: transform 0.3s ease; /* Smooth transition */
+            transform-origin: top left; /* Set the origin for scaling */
+        }
+
+        .slides{
+            transition: transform 0.3s ease; /* Smooth transition */
+            transform-origin: top left; /* Set the origin for scaling */
+        }
+
+        .oj-web-applayout-header{
+            display:none
+        }
+
+    </style>
+
+    <div id="imageSliderContainer" class="oj-flex">
+        <!-- Page -->
+        <div id="notificationMessages">
+            <!-- Messages -->
+            <oj-messages
+                    class="oj-color-invert"
+                    messages="[[messagesDataprovider()]]"
+                    position="{}"
+                    display="notification"
+                    display-options.category="none"></oj-messages>
+        </div>
+        <!-- Previous and Next buttons -->
+        <div class="oj-flex oj-flex-item">
+            <oj-combobox-one
+                    id="combobox1"
+                    value="{{app}}"
+                    label-hint="App"
+                    style="float:left"
+                    class="oj-form-control-max-width-md">
+                <oj-option value="kp">KP</oj-option>
+                <oj-option value="bu">BU</oj-option>
+            </oj-combobox-one>
+            <!--button id="prevBtn" class="prev oj-flex-item" data-bind="click: prevSlide">&#10094;</button>
+            <button id="nextBtn" class="next oj-flex-item" data-bind="click: nextSlide">&#10095;</button-->
+        </div>
+        <div class="slider-container oj-flex-item">
+            <!-- Conditional rendering of current image -->
+            <oj-bind-if test="[[currentImage]]">
+                <oj-bind-if test="[[currentImage().type =='image' && currentImage().preview]]">
+                    <div id="imgWindow" class="slides">
+                        <img data-bind="attr: { src: currentImage().preview, alt: currentImage().description }" style="width: 100%;">
+                    </div>
+                </oj-bind-if>
+                <oj-bind-if test="[[currentImage().type=='video' && currentImage().preview]]">
+                <div id="videoWindow" :key="[[currentImage().title]]" class="slides">
+                    <video id="videoElement" tabindex="-1" :key="[[currentImage().title]]"   :title="[[currentImage().title]]" style="height:100vh" preload="auto" autoplay muted loop controls preload="auto" >
+                        <source type="video/mp4" :src="[[currentImage().preview]]"/>
+                    </video>
+                </div>
+                </oj-bind-if>
+            </oj-bind-if>
+        </div>
+    </div>
+</div>

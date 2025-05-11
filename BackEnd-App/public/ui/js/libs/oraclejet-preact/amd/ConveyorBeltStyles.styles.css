@@ -1,0 +1,68 @@
+.ConveyorBeltStyles_baseStyle__1u3kg3i0 {
+  background-color: transparent;
+  position: relative;
+  display: flex;
+  flex: 1 1 100%;
+  align-items: center;
+  overflow: hidden;
+}
+.ConveyorBeltStyles_baseStyle__1u3kg3i0:focus {
+  outline-style: dotted;
+  outline-width: 1px;
+  outline-color: var(--oj-c-EXPERIMENTAL-DO-NOT-USE-border-keyboard-focus);
+  outline-offset: -1px;
+}
+.ConveyorBeltStyles_nextButtonClipPath__1u3kg3i1 {
+  -webkit-clip-path: inset(0rem  calc(11 * var(--oj-c-EXPERIMENTAL-DO-NOT-USE-size-units, 0.25rem)) 0rem 0rem);
+          clip-path: inset(0rem  calc(11 * var(--oj-c-EXPERIMENTAL-DO-NOT-USE-size-units, 0.25rem)) 0rem 0rem);
+}
+.ConveyorBeltStyles_previousButtonClipPath__1u3kg3i2 {
+  -webkit-clip-path: inset(0rem  0rem 0rem  calc(11 * var(--oj-c-EXPERIMENTAL-DO-NOT-USE-size-units, 0.25rem)));
+          clip-path: inset(0rem  0rem 0rem  calc(11 * var(--oj-c-EXPERIMENTAL-DO-NOT-USE-size-units, 0.25rem)));
+}
+.ConveyorBeltStyles_bothButtonClipPath__1u3kg3i3 {
+  -webkit-clip-path: inset(0rem   calc(11 * var(--oj-c-EXPERIMENTAL-DO-NOT-USE-size-units, 0.25rem)) 0rem calc(11 * var(--oj-c-EXPERIMENTAL-DO-NOT-USE-size-units, 0.25rem)));
+          clip-path: inset(0rem   calc(11 * var(--oj-c-EXPERIMENTAL-DO-NOT-USE-size-units, 0.25rem)) 0rem calc(11 * var(--oj-c-EXPERIMENTAL-DO-NOT-USE-size-units, 0.25rem)));
+}
+.ConveyorBeltStyles_buttonContainer__1u3kg3i4 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex: 0 0 auto;
+  z-index: 1;
+}
+.ConveyorBeltStyles_overflowContainer__1u3kg3i5 {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.ConveyorBeltStyles_overflowContainer__1u3kg3i5::-webkit-scrollbar {
+  display: none;
+}
+.ConveyorBeltStyles_contentContainer__1u3kg3i6 {
+  display: flex;
+  align-items: center;
+  flex: 1 0 auto;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  position: relative;
+}
+.ConveyorBeltStyles_previousButton__1u3kg3i7 {
+  position: absolute;
+  left: 0;
+  margin: 0 0.25rem 0 0;
+  box-shadow: rgba(var(--oj-c-EXPERIMENTAL-DO-NOT-USE-boxshadow-shadowcolor), 0.2) 0.25rem 0px 0.25rem -0.25rem;
+}
+.ConveyorBeltStyles_nextButton__1u3kg3i8 {
+  position: absolute;
+  right: 0;
+  margin: 0 0 0 0.25rem;
+  box-shadow: rgba(var(--oj-c-EXPERIMENTAL-DO-NOT-USE-boxshadow-shadowcolor), 0.2) -0.25rem 0px 0.25rem -0.25rem;
+}

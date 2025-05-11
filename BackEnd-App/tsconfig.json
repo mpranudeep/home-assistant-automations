@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+      "resolveJsonModule" : true,
+      "target": "ES2020",
+      "module": "CommonJS",
+      "moduleResolution": "Node",
+      "strict": true,
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "outDir": "./dist",
+      "rootDir": "./src"   
+    },
+    "include": ["src/**/*", "public"],                   // Include all TypeScript files in src
+    "exclude": ["node_modules", "dist","public"] 
+  }

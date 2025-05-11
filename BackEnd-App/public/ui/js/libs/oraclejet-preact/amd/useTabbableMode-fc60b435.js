@@ -1,0 +1,2 @@
+define(['exports', 'preact/hooks', './TabbableModeContext-4083a895', './useId-ea85e20e'], (function(e,b,a,t){"use strict";e.useTabbableMode=function(e,o=!0){const{isTabbable:n,isRoving:s,focusedId:d}=b.useContext(a.TabbableModeContext),i=t.useId(),u=n&&!e;return{isTabbable:n,tabbableModeProps:{tabIndex:!u||s&&i!==d?-1:0,...u&&s&&o&&{"data-oj-roving-tabindex-item":i}}}}}));
+//# sourceMappingURL=useTabbableMode-fc60b435.js.map
