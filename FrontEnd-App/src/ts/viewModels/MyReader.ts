@@ -265,7 +265,7 @@ class MyReaderViewModel {
         let response = await convertedResponse.json();
         let filePath = response.audioFilePath;
         filePath = encodeURI(filePath);
-        let audioFileURL = `${this.config.hostName}/api/text-to-speech/audio-file?filePath=${filePath}`;
+        let audioFileURL = `${this.config.hostName}${filePath}`;
         return audioFileURL;
       } catch (ex) {
         console.log(ex);

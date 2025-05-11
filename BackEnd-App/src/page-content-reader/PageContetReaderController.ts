@@ -13,7 +13,7 @@ export default class PageContentReaderController{
        const lines = response.content
           .split('\n')
           .map(line => {
-            console.log(`--> ${line}`)
+            // console.log(`--> ${line}`)
             return line.trim()
           })
           .filter(line => line.length > 0)
@@ -22,7 +22,7 @@ export default class PageContentReaderController{
            });
 
         return {
-            nextChapterURL : "",
+            nextChapterURL : response.nextChapterURL,
             novelName : "",
             chapterHeading : "",
             items : lines

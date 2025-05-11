@@ -3,6 +3,8 @@ import { Readability } from '@mozilla/readability';
 import { Logger } from '@nestjs/common';
 import { convert } from 'html-to-text';
 import puppeteer from 'puppeteer';
+import { DOMParser as XmlDomParser } from 'xmldom'; // use xmldom parser, not JSDOM here
+import xpath from 'xpath';
 
 export default class PageContentReader {
   private log = new Logger(PageContentReader.name);
@@ -15,10 +17,31 @@ export default class PageContentReader {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
-  public async getReadableContent(url: string): Promise<{ title: string; content: string }> {
+  public async getReadableContent(url: string): Promise<{ title: string; content: string, nextChapterURL:string|undefined|null }> {
     try {
       const html = await this.fetchPageContentWithPuppeteer(url);
+
+     const xmlDom = new XmlDomParser({
+        
+      }).parseFromString(html);
+
+      const select = xpath.useNamespaces({ x: 'http://www.w3.org/1999/xhtml' });
+
+      // @ts-ignore
+      const nextNode= select(
+        "//a[@id='next_chap']",
+        xmlDom
+      )[0]
+      
+      console.log('Next Chapter node - '+nextNode?.getAttribute('href'));
+
+      let nextChapterURL = nextNode?.getAttribute('href');
+      
+      // ?.getAttribute('href');
+
+
       const dom = new JSDOM(html, { url });
+      
       const reader = new Readability(dom.window.document);
       const article = reader.parse();
 
@@ -33,7 +56,10 @@ export default class PageContentReader {
       this.log.debug(`Content length: ${plainText.length} chars`);
       // this.log.debug(`${plainText}`);
 
-      return { title, content: plainText };
+      return { title, 
+                content: plainText ,
+                nextChapterURL : nextChapterURL
+              };
     } catch (err) {
     // @ts-ignore
       this.log.error(`Error scraping content from ${url}:`, err.stack || err.message);
@@ -43,7 +69,7 @@ export default class PageContentReader {
 
   private async fetchPageContentWithPuppeteer(url: string): Promise<string> {
    // @ts-ignore
-    const browser = await puppeteer.launch({ headless: 'new' });
+    const browser = await puppeteer.launch({ headless: 'new', executablePath: '/usr/bin/chromium' });
     const page = await browser.newPage();
 
     await page.setUserAgent(

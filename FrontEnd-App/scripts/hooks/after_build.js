@@ -11,23 +11,23 @@ const path = require('path');
 
 module.exports = function (configObj) {
   return new Promise((resolve, reject) => {
-  	console.log("Running after_build hook.");
-    let moveDirectorySync = function(sourceDir, destDir) {
-        try {
-//            fs.renameSync(sourceDir, destDir);
-            fs.copySync(sourceDir, destDir);
-            console.log(`Directory moved from ${sourceDir} to ${destDir}`);
-        } catch (error) {
-            console.error(`Error moving directory: ${error.message}`);
-        }
-    };
+//   	console.log("Running after_build hook.");
+//     let moveDirectorySync = function(sourceDir, destDir) {
+//         try {
+// //            fs.renameSync(sourceDir, destDir);
+//             fs.copySync(sourceDir, destDir);
+//             console.log(`Directory moved from ${sourceDir} to ${destDir}`);
+//         } catch (error) {
+//             console.error(`Error moving directory: ${error.message}`);
+//         }
+//     };
 
-    let source = path.join(__dirname, '../','../', 'web');
-    let destination = path.join(__dirname, '../','../','../','BackEnd-App', 'public', 'ui');
+//     let source = path.join(__dirname, '../','../', 'web');
+//     let destination = path.join(__dirname, '../','../','../','BackEnd-App', 'public', 'ui');
 
-    fs.rmSync(destination, { recursive: true, force: true });
-    fs.mkdirSync(path.join(destination,"../"), { recursive: true });
-    moveDirectorySync(source,destination);
+//     fs.rmSync(destination, { recursive: true, force: true });
+//     fs.mkdirSync(path.join(destination,"../"), { recursive: true });
+//     moveDirectorySync(source,destination);
 
   	resolve(configObj);
   });
