@@ -1,2 +1,0 @@
-define(['exports', 'preact/jsx-runtime', './useComponentTheme-b44c0028', './InlineHelpSource-063ae7da', './UNSAFE_UserAssistance/themes/redwood/UserAssistanceTheme'], (function(e,s,n,t,c){"use strict";e.InlineHelp=function({assistiveText:e,sourceLink:i,sourceText:r}){const{styles:{helpTextStyles:o}}=n.useComponentTheme(c.UserAssistanceRedwoodTheme);return s.jsxs("div",{children:[e&&i?s.jsx("span",{class:o,children:e}):e,i&&s.jsx(t.InlineHelpSource,{source:i,children:r})]})}}));
-//# sourceMappingURL=InlineHelp-8b74d1e9.js.map

@@ -278,7 +278,7 @@ class MyReaderViewModel {
     let self = this;
     let config = AppUtils.getConfiguration();
     console.log(`${AppUtils.getConfiguration().hostName}`);
-    let result = await fetch(`${config.hostName}/api/novel-content?requestURL=${url}&spellCorrectEnabled=${this.spellCorrectEnabled()}`);
+    let result = await fetch(`${config.hostName}/page-content-reader?requestURL=${url}&spellCorrectEnabled=${this.spellCorrectEnabled()}`);
     let i = 1;
     let response = await result.json();
     // @ts-ignore
@@ -294,7 +294,7 @@ class MyReaderViewModel {
 
     this.nextChapterURL(response.nextChapterURL);
     if(this.nextChapterURL()){
-      fetch(`${config.hostName}/api/novel-content?requestURL=${this.nextChapterURL()}&spellCorrectEnabled=${this.spellCorrectEnabled()}`);
+      fetch(`${config.hostName}/page-content-reader?requestURL=${this.nextChapterURL()}&spellCorrectEnabled=${this.spellCorrectEnabled()}`);
     }
     
 

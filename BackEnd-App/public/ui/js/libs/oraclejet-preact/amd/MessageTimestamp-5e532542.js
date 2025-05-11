@@ -1,2 +1,0 @@
-define(['exports', 'preact/jsx-runtime', './classNames-60f91d93', './PRIVATE_Message/themes/MessageStyles.css', './MessageFormattingUtils-9bf7b321'], (function(s,e,a,t,i){"use strict";s.MessageTimestamp=function({value:s,variant:m="banner"}){const n=a.classNames([t.messageTimestampStyles[m]]),r=i.formatTimestamp(s);return e.jsx("div",{class:n,children:r})}}));
-//# sourceMappingURL=MessageTimestamp-5e532542.js.map

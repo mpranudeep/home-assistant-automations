@@ -28,6 +28,7 @@
     "jsdom": "^26.1.0",
     "nest": "^0.1.6",
     "nestjs": "^0.0.1",
+    "puppeteer": "^24.8.2",
     "ws": "^8.18.1"
   },
   "devDependencies": {

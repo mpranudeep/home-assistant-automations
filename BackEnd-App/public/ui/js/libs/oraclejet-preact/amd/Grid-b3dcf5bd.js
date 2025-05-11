@@ -1,2 +1,0 @@
-define(['exports', 'preact/jsx-runtime', './grid-56086e28', './boxalignment-c5c1f0bf', './mergeInterpolations-e7e2a709', 'css!./GridStyles.styles.css'], (function(e,s,t,n,r,i){"use strict";const l=[...Object.values(t.gridInterpolations),...Object.values(n.boxAlignmentInterpolations)],c=r.mergeInterpolations(l);e.Grid=({children:e,...t})=>{const{class:n,...r}=c(t),i={...r};return s.jsx("div",{class:`GridStyles_baseStyles__11rn47i0 ${n}`,style:i,children:e})}}));
-//# sourceMappingURL=Grid-b3dcf5bd.js.map

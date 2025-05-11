@@ -5,9 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const jsdom_1 = require("jsdom");
 const readability_1 = require("@mozilla/readability");
-const axios_1 = __importDefault(require("axios"));
 const common_1 = require("@nestjs/common");
 const html_to_text_1 = require("html-to-text");
+const puppeteer_1 = __importDefault(require("puppeteer"));
 class PageContentReader {
     constructor() {
         this.log = new common_1.Logger(PageContentReader.name);
@@ -15,39 +15,41 @@ class PageContentReader {
     getTitleFromUrl(url) {
         const parts = url.split('/');
         let lastPart = parts.filter(Boolean).pop() || 'Untitled';
-        // Replace dashes/underscores with spaces and capitalize
-        lastPart = decodeURIComponent(lastPart)
+        return decodeURIComponent(lastPart)
             .replace(/[-_]/g, ' ')
             .replace(/\b\w/g, (char) => char.toUpperCase());
-        return lastPart;
     }
     async getReadableContent(url) {
-        const response = await axios_1.default.get(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
-            },
-        });
-        const dom = new jsdom_1.JSDOM(response.data, { url }); // Important to include the URL
-        const reader = new readability_1.Readability(dom.window.document);
-        const article = reader.parse();
-        if (!article) {
-            throw new Error('Could not parse article.');
+        try {
+            const html = await this.fetchPageContentWithPuppeteer(url);
+            const dom = new jsdom_1.JSDOM(html, { url });
+            const reader = new readability_1.Readability(dom.window.document);
+            const article = reader.parse();
+            if (!article || !article.content) {
+                throw new Error('Could not parse article.');
+            }
+            const title = article.title?.trim() || this.getTitleFromUrl(url);
+            const plainText = (0, html_to_text_1.convert)(article.content, { wordwrap: false });
+            this.log.debug(`Title: ${title}`);
+            this.log.debug(`Content length: ${plainText.length} chars`);
+            this.log.debug(`${plainText}`);
+            return { title, content: plainText };
         }
-        this.log.debug(`Tilte - ${article.title}`);
-        if (article.title && article.content) {
-            let title = this.getTitleFromUrl(url);
-            const plainText = (0, html_to_text_1.convert)(article.content);
-            this.log.debug(`Content - ${plainText}`);
-            return {
-                title: title,
-                content: plainText, // This is cleaned HTML
-            };
+        catch (err) {
+            // @ts-ignore
+            this.log.error(`Error scraping content from ${url}:`, err.stack || err.message);
+            throw err;
         }
-        else {
-            throw new Error('Can not read page');
-        }
+    }
+    async fetchPageContentWithPuppeteer(url) {
+        // @ts-ignore
+        const browser = await puppeteer_1.default.launch({ headless: 'new' });
+        const page = await browser.newPage();
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+        const content = await page.content();
+        await browser.close();
+        return content;
     }
 }
 exports.default = PageContentReader;

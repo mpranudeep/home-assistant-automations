@@ -5,9 +5,10 @@ import { Module } from '@nestjs/common';
 import { IptvModule } from '../apis/IptvModule';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import PageContentReaderModule from '../page-content-reader/PageContentReaderModule';
 
 @Module({
-  imports: [EventEmitterModule.forRoot(),IptvModule,
+  imports: [EventEmitterModule.forRoot(),IptvModule,PageContentReaderModule,
   ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..','..', 'public','ui'),
       serveRoot: '/ui', // Oracle JET will be served under /ui/

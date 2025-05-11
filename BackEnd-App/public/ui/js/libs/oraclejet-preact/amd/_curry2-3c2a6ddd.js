@@ -1,2 +1,0 @@
-define(['exports', './_curry1-29759c0d'], (function(r,e){"use strict";r._curry2=function(r){return function c(n,u){switch(arguments.length){case 0:return c;case 1:return e._isPlaceholder(n)?c:e._curry1((function(e){return r(n,e)}));default:return e._isPlaceholder(n)&&e._isPlaceholder(u)?c:e._isPlaceholder(n)?e._curry1((function(e){return r(e,u)})):e._isPlaceholder(u)?e._curry1((function(e){return r(n,e)})):r(n,u)}}}}));
-//# sourceMappingURL=_curry2-3c2a6ddd.js.map

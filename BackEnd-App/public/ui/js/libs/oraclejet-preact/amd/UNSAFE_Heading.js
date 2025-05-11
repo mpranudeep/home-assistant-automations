@@ -1,2 +1,0 @@
-define(['exports', './Heading-265fce7c', 'preact/jsx-runtime', './UNSAFE_Heading/themes/HeadingStyles.css', 'css!./HeadingStyles.styles.css', './vanilla-extract-recipes-createRuntimeFn.esm-0883d6a2'], (function(e,s,i,n,t,a){"use strict";e.Heading=s.Heading,e.headingElementTypes=s.headingElementTypes,e.sizeOptions=s.sizeOptions,Object.defineProperty(e,"__esModule",{value:!0})}));
-//# sourceMappingURL=UNSAFE_Heading.js.map

@@ -11,10 +11,29 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@nestjs/common");
+const PageContentReader_1 = __importDefault(require("./PageContentReader"));
 let PageContentReaderController = class PageContentReaderController {
-    handleUrl(inputURL) {
+    constructor() {
+        this.pageContentReader = new PageContentReader_1.default();
+    }
+    async handleUrl(inputURL) {
+        let response = await this.pageContentReader.getReadableContent(inputURL);
+        const lines = response.content
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .map(i => { line: i; });
+        return {
+            nextChapterURL: "",
+            novelName: "",
+            chapterHeading: "",
+            items: lines
+        };
     }
 };
 __decorate([
@@ -22,7 +41,7 @@ __decorate([
     __param(0, (0, common_1.Query)('inputURL')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], PageContentReaderController.prototype, "handleUrl", null);
 PageContentReaderController = __decorate([
     (0, common_1.Controller)('page-content-reader')
