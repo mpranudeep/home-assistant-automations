@@ -44,3 +44,4 @@ Constants.JIO_TV_URL = process.env.JIO_TV_URL;
 Constants.WEB_PORT = process.env.WEB_PORT;
 Constants.HOME_ASSISTANT_INTEGRATION_ENABLED = process.env.HOME_ASSISTANT_INTEGRATION_ENABLED;
 exports.default = Constants;
+console.log(JSON.stringify(Constants));
