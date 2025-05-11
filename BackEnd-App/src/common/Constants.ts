@@ -10,3 +10,5 @@ export default class Constants{
     public static readonly WEB_PORT = process.env.WEB_PORT as string;
     public static readonly HOME_ASSISTANT_INTEGRATION_ENABLED = process.env.HOME_ASSISTANT_INTEGRATION_ENABLED as string;
 }
+
+console.log(JSON.stringify(Constants));
