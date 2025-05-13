@@ -41,7 +41,7 @@ export class PiperManager implements OnModuleInit {
     const archivePath = path.join(this.baseDir, archiveName);
 
 
-    if (!(existsSync(this.binaryPath + ".exe") || existsSync(this.binaryPath + ".sh"))) {
+    if (!(existsSync(this.binaryPath + ".exe") || existsSync(this.binaryPath))) {
       this.logger.log(`Downloading Piper binary from ${archiveUrl} to ${this.binaryPath}`);
       await this.downloadFile(archiveUrl, archivePath);
 
