@@ -1,10 +1,13 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query,Res } from '@nestjs/common';
 import { PiperManager } from './piper-manager';
 import * as path from 'path';
 import { fstat, rmSync, unlink} from 'fs';
+import * as fs from 'fs';
 import { mkdir } from 'fs/promises';
 import { parse } from 'url';
 import { basename } from 'path';
+import { Response } from 'express';
+
 
 @Controller('api/text-to-speech')
 export class TtsController {
@@ -14,21 +17,34 @@ export class TtsController {
 
   @Post('convert')
   async convertTextToSpeech(@Body('text') text: string) {
-    const filename = `speech-${Date.now()}.wav`;
-    const ttsFolder = path.join('./', 'dist', 'tts-audio')
-    
-    await mkdir(ttsFolder, { recursive: true });
-    
-    let outputPath = path.join(ttsFolder,filename)
-    console.log(`Downloaded to ${outputPath}`);
+    let filePath = await this.ttsService.speakToFile(text);
 
-    await this.ttsService.speakToFile(text, outputPath);
+    let fileName = path.basename(filePath);
 
     return {
        text: text,
-       audioFilePath: `/tts-audio/${filename}` // public path to access the file
+       audioFilePath: `/tts-audio/${fileName}` // public path to access the file
     };
   }
+
+
+@Get('convert')
+async convertTextToSpeechGet(
+  @Query('text') text: string,
+  @Res() res: Response
+) {
+  const filePath = await this.ttsService.speakToFile(text);
+
+  const fileName = path.basename(filePath);
+
+  res.set({
+    'Content-Type': 'audio/wav',
+    'Content-Disposition': `inline; filename="${fileName}"`,
+  });
+
+  const stream = fs.createReadStream(filePath);
+  return stream.pipe(res);
+}
 
   @Get('delete-file')
   async deleteFile(@Query('filePath') filePath: string) {
