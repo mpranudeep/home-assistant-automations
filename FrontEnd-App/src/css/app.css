@@ -51,3 +51,40 @@ html[dir="rtl"] .demo-oracle-icon {
       transform:translate(-25%, -25%) scale(0.5)
   }
 }
+
+
+/* Base Styles - Normal Mode (no override) */
+
+/* Sepia Mode */
+body.sepia-mode,
+.sepia-mode .oj-web-applayout-page {
+  background-color: #F5ECD9 !important;
+  color: #5B4636 !important;
+}
+
+.sepia-mode .oj-panel,
+.sepia-mode .oj-form-layout,
+.sepia-mode input,
+.sepia-mode textarea,
+.sepia-mode select {
+  background-color: #F5ECD9 !important;
+  color: #5B4636 !important;
+  border-color: #C0B394 !important;
+}
+
+/* Dark Mode */
+body.dark-mode,
+.dark-mode .oj-web-applayout-page {
+  background-color: #121212 !important;
+  color: #E0E0E0 !important;
+}
+
+.dark-mode .oj-panel,
+.dark-mode .oj-form-layout,
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode select {
+  background-color: #1E1E1E !important;
+  color: #E0E0E0 !important;
+  border-color: #444 !important;
+}

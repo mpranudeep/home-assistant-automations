@@ -145,7 +145,7 @@ export class PiperManager implements OnModuleInit {
   private async waitForFileWriteComplete(
     filePath: string,
     timeout = 10000,
-    interval = 1000,
+    interval = 500,
     stableCountRequired = 3
   ): Promise<void> {
     const start = Date.now();
@@ -157,7 +157,7 @@ export class PiperManager implements OnModuleInit {
         try {
           const stats = statSync(filePath);
           const currentSize = stats.size;
-
+            
           if (currentSize === prevSize) {
             stableCount++;
           } else {

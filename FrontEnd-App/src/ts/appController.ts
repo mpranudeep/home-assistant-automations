@@ -49,6 +49,11 @@ class RootViewModel {
       this.smScreen = ResponsiveKnockoutUtils.createMediaQueryObservable(smQuery);
     }
 
+ 
+
+
+                
+
     const navData = [
       { path: "", redirect: "dashboard" },
       { path: "dashboard", detail: { label: "Dashboard", iconClass: "oj-ux-ico-bar-chart" } },

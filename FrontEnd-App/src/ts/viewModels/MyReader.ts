@@ -136,6 +136,19 @@ class MyReaderViewModel {
         console.log('Pause event');
       });
     }
+
+        
+          // // Load on app start
+          // const savedTheme = localStorage.getItem('themeMode');
+          // if (savedTheme) {
+          //   // @ts-ignore
+          //   setThemeMode(savedTheme);
+          // }else{
+          //   // @ts-ignore
+          //   setThemeMode('sepia-mode');
+          // }
+          document.body.classList.add('sepia-mode');
+
   }
 
   /**
@@ -265,7 +278,8 @@ class MyReaderViewModel {
         let response = await convertedResponse.json();
         let filePath = response.audioFilePath;
         filePath = encodeURI(filePath);
-        let audioFileURL = `${this.config.hostName}${filePath}`;
+        // let audioFileURL = `${this.config.hostName}${filePath}`;
+        let audioFileURL = `${this.config.hostName}/api/text-to-speech/get-file?filePath=${filePath}`;
         return audioFileURL;
       } catch (ex) {
         console.log(ex);
