@@ -114,6 +114,9 @@ class MyReaderViewModel {
           self.loadNextChapter();
       }
 
+      if(event.key === 'a' || event.key === 'A'){
+        self.playFromParagraph(self.currentLineNumber() + 1);
+      }
       if(event.key === ' '){
         if(self.playerControls.playEnabled())
         {
