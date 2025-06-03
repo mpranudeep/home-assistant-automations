@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Post, Query, Res } from '@nestjs/common';
 import { PiperManager } from './piper-manager';
 import * as path from 'path';
 import { fstat, rmSync, unlink } from 'fs';
@@ -24,9 +24,13 @@ export class TtsController {
       'Content-Type': 'audio/wav',
       'Content-Disposition': `inline; filename="${fileName}"`,
     });
-    let filePath =  path.join('./', 'dist', 'tts-audio',fileName);
-    const stream = fs.createReadStream(filePath);
-    return stream.pipe(res);
+    let filePath = await this.ttsService.getTTSFile(fileName);
+    if(fs.existsSync(filePath)){
+      const stream = fs.createReadStream(filePath);
+      return stream.pipe(res);
+    }else{
+       throw new NotFoundException('404');
+    }
   }
 
   @Post('convert')

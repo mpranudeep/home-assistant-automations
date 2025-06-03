@@ -245,10 +245,24 @@ class MyReaderViewModel {
     let audioFileURL = await currentP.audioFile;
 
     self.audioSource.src = audioFileURL;
-    self.audioPlayer.load();
+
+    let retryCounter = 3;
+    
+    while(retryCounter>0){
+      try{
+          await self.audioPlayer.load();
+          retryCounter=0;
+        }catch(error){
+            console.log(error);
+            console.log("Retry loading after 1 second");
+            retryCounter--;
+            await this.sleep(1000);
+        } 
+    }
+    
     // @ts-ignore
     self.audioPlayer.playbackRate = parseFloat(self.playbackRate());
-    self.audioPlayer?.play();
+    await self.audioPlayer?.play();
 
     let targetP = document.getElementById('paragraph-' + (pNumber + 1));
     self.scrollToTargetAdjusted(targetP);
@@ -310,9 +324,9 @@ class MyReaderViewModel {
     }
 
     this.nextChapterURL(response.nextChapterURL);
-    if(this.nextChapterURL()){
-      fetch(`${config.hostName}/page-content-reader?requestURL=${this.nextChapterURL()}&spellCorrectEnabled=${this.spellCorrectEnabled()}`);
-    }
+    // if(this.nextChapterURL()){
+    //   fetch(`${config.hostName}/page-content-reader?requestURL=${this.nextChapterURL()}&spellCorrectEnabled=${this.spellCorrectEnabled()}`);
+    // }
     
 
     // @ts-ignore
@@ -368,9 +382,9 @@ class MyReaderViewModel {
     self.playFromParagraph(self.currentLineNumber() - 1);
   }
 
-  pauseAction() {
+  async pauseAction() {
     let self = this;
-    self.audioPlayer.pause();
+    await self.audioPlayer.pause();
     self.playerControls.playEnabled(false);
   }
 

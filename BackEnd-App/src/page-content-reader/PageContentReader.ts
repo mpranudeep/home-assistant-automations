@@ -6,6 +6,10 @@ import puppeteer from 'puppeteer';
 import { DOMParser as XmlDomParser } from 'xmldom'; // use xmldom parser, not JSDOM here
 import xpath from 'xpath';
 import * as os from 'os';
+import { Browser, computeExecutablePath } from '@puppeteer/browsers';
+import { cp } from 'fs';
+
+
 
 export default class PageContentReader {
   private log = new Logger(PageContentReader.name);
@@ -16,6 +20,16 @@ export default class PageContentReader {
     return decodeURIComponent(lastPart)
       .replace(/[-_]/g, ' ')
       .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  private removeLinks(input: string): string {
+    return input.replace(
+      /https?:\/\/[^\s]+/g,
+      ''
+    ).replace(
+      /www\.[^\s]+/g,
+      ''
+    );
   }
 
   public async getReadableContent(url: string): Promise<{ title: string; content: string, nextChapterURL: string | undefined | null }> {
@@ -51,8 +65,10 @@ export default class PageContentReader {
       }
 
       const title = article.title?.trim() || this.getTitleFromUrl(url);
-      const plainText = convert(article.content, { wordwrap: false });
+      let plainText = convert(article.content, { wordwrap: false });
 
+      plainText = this.removeLinks(plainText);
+      
       this.log.debug(`Title: ${title}`);
       this.log.debug(`Content length: ${plainText.length} chars`);
       // this.log.debug(`${plainText}`);
@@ -78,9 +94,11 @@ export default class PageContentReader {
     let args: string[] = [];
 
     if (!isWindows) {
-      executablePath = '/usr/bin/chromium';
+      // executablePath = '/usr/bin/chromium';
       args = ['--no-sandbox', '--disable-setuid-sandbox']
     }
+
+    //  executablePath = await computeExecutablePath({ browser: Browser.CHROME, cacheDir:"./chrome",buildId:"stable"});
     // @ts-ignore
     const browser = await puppeteer.launch({ headless: true, executablePath: executablePath, args: args });
     const page = await browser.newPage();

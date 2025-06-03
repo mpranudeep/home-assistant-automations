@@ -1,0 +1,583 @@
+localtuya:
+  - host: 192.168.68.111
+    device_id: bf198bb8ce21e9be800ivm
+    local_key: Ax||O$>b49RN?v#k
+    protocol_version: "3.5"
+    friendly_name: Guest bedroom Geyser
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+  - host: 192.168.68.106
+    device_id: bfc0c8322b9d5c81eeosvm
+    local_key: V:pX!Ho1[*`@m8Q6
+    protocol_version: "3.5"
+    friendly_name: Children's bedroom AC
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+  - host: 192.168.68.127
+    device_id: bf23a34d24621de93bwxia
+    local_key: Z+C.VA#/GzHN!TU7
+    protocol_version: "3.5"
+    friendly_name: Children's bedroom Geyser
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+  - host: 192.168.68.104
+    device_id: bfcd0a53fa4d8bf6e3rczp
+    local_key: Gy#OOwbd4(G(5w?4
+    protocol_version: "3.4"
+    friendly_name: Hall TV
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12
+  - host: 192.168.68.102
+    device_id: bf27646b22831e13e0ei6g
+    local_key: A;~h^YXDfqP4ZJ_b
+    protocol_version: "3.5"
+    friendly_name: Hall plug
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+  - host: 192.168.68.122
+    device_id: bf23099e46de812e57adnb
+    local_key: "]e3m~*_oMF!UBc<b"
+    protocol_version: "3.4"
+    friendly_name: Guest bedroom bathroom
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12
+  - host: 192.168.68.129
+    device_id: bf2600cb8c40862b03xrd0
+    local_key: hiLm92E.Oi9{p5ry
+    protocol_version: "3.4"
+    friendly_name: Bedroom Nightstand - 2
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12
+  - host: 192.168.68.101
+    device_id: bfab9a6084e9cfc437aq2p
+    local_key: BLqX-OB*>n|oO'rS
+    protocol_version: "3.4"
+    friendly_name: Guest bedroom
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12
+  - host: 192.168.68.108
+    device_id: bf80b7f997fa487f7bpmx3
+    local_key: vPR/0@>WFF&}_Yq&
+    protocol_version: "3.4"
+    friendly_name: Kitchen cabin
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12
+  - host: 192.168.68.113
+    device_id: bfb5ae18cbf3215b0acd9o
+    local_key: "`}^Wtm/alG/#V(_p"
+    protocol_version: "3.4"
+    friendly_name: Children's bedroom bathroom
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12
+  - host: 192.168.68.103
+    device_id: bf46d8adafca8a3284bn7d
+    local_key: fKMST<ls*[&'s+*8
+    protocol_version: "3.4"
+    friendly_name: 4 Touch switch 12
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12
+  - host: 192.168.68.130
+    device_id: bfbabcf1279e755dbbl3n9
+    local_key: G*;+N3VSN&HM)1O|
+    protocol_version: "3.4"
+    friendly_name: Bedroom nightstand - 1
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12
+  - host: 192.168.68.109
+    device_id: bfb3f88623cd741618zm8a
+    local_key: "r]v(p/T0K=uW$>T:"
+    protocol_version: "3.4"
+    friendly_name: Children's bedroom - 1
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12
+  - host: 192.168.68.114
+    device_id: bfbb0fbf855822febcexnu
+    local_key: /t##H9NXkAb.qk/;
+    protocol_version: "3.4"
+    friendly_name: Dining room- 2
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12
+  - host: 192.168.68.107
+    device_id: bf55bb5e31934da1926nm7
+    local_key: "[/24umq|/5`Z.kZI"
+    protocol_version: "3.4"
+    friendly_name: Dining room mirror
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12
+  - host: 192.168.68.115
+    device_id: bfb61b213bf8eccac5hsgz
+    local_key: B>|YD-@j):~ex:Hm
+    protocol_version: "3.4"
+    friendly_name: Dining room 1
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12
+  - host: 192.168.68.128
+    device_id: bf88c8cecb59716429pefi
+    local_key: NZ1x)q{m>Y@!D|hU
+    protocol_version: "3.4"
+    friendly_name: Bedroom
+    entities:
+      - platform: switch
+        friendly_name: Switch 1
+        id: 1
+      - platform: switch
+        friendly_name: Switch 2
+        id: 2
+      - platform: switch
+        friendly_name: Switch 3
+        id: 3
+      - platform: switch
+        friendly_name: Switch 4
+        id: 4
+      - platform: switch
+        friendly_name: Switch 5
+        id: 5
+      - platform: switch
+        friendly_name: Switch 6
+        id: 6
+      - platform: switch
+        friendly_name: Switch 7
+        id: 7
+      - platform: switch
+        friendly_name: Switch 8
+        id: 8
+      - platform: switch
+        friendly_name: Switch 9
+        id: 9
+      - platform: switch
+        friendly_name: Switch 10
+        id: 10
+      - platform: switch
+        friendly_name: Switch 11
+        id: 11
+      - platform: switch
+        friendly_name: Switch 12
+        id: 12

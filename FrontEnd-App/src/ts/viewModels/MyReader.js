@@ -85,6 +85,9 @@ define(["require", "exports", "../accUtils", "../appUtils", "knockout", "oj-c/in
                 if (event.key === 'ArrowRight') {
                     self.loadNextChapter();
                 }
+                if (event.key === 'a' || event.key === 'A') {
+                    self.playFromParagraph(self.currentLineNumber() + 1);
+                }
                 if (event.key === ' ') {
                     if (self.playerControls.playEnabled()) {
                         self.pauseAction();
@@ -103,6 +106,7 @@ define(["require", "exports", "../accUtils", "../appUtils", "knockout", "oj-c/in
                     console.log('Pause event');
                 });
             }
+            document.body.classList.add('sepia-mode');
         }
         disconnected() {
         }
@@ -182,9 +186,21 @@ define(["require", "exports", "../accUtils", "../appUtils", "knockout", "oj-c/in
                 let currentP = this.novelParagraphs()[pNumber]();
                 let audioFileURL = yield currentP.audioFile;
                 self.audioSource.src = audioFileURL;
-                self.audioPlayer.load();
+                let retryCounter = 3;
+                while (retryCounter > 0) {
+                    try {
+                        yield self.audioPlayer.load();
+                        retryCounter = 0;
+                    }
+                    catch (error) {
+                        console.log(error);
+                        console.log("Retry loading after 1 second");
+                        retryCounter--;
+                        yield this.sleep(1000);
+                    }
+                }
                 self.audioPlayer.playbackRate = parseFloat(self.playbackRate());
-                (_b = self.audioPlayer) === null || _b === void 0 ? void 0 : _b.play();
+                yield ((_b = self.audioPlayer) === null || _b === void 0 ? void 0 : _b.play());
                 let targetP = document.getElementById('paragraph-' + (pNumber + 1));
                 self.scrollToTargetAdjusted(targetP);
             });
@@ -215,7 +231,7 @@ define(["require", "exports", "../accUtils", "../appUtils", "knockout", "oj-c/in
                         let response = yield convertedResponse.json();
                         let filePath = response.audioFilePath;
                         filePath = encodeURI(filePath);
-                        let audioFileURL = `${this.config.hostName}${filePath}`;
+                        let audioFileURL = `${this.config.hostName}/api/text-to-speech/get-file?filePath=${filePath}`;
                         return audioFileURL;
                     }
                     catch (ex) {
@@ -243,9 +259,6 @@ define(["require", "exports", "../accUtils", "../appUtils", "knockout", "oj-c/in
                     self.novelParagraphs.push(ob);
                 }
                 this.nextChapterURL(response.nextChapterURL);
-                if (this.nextChapterURL()) {
-                    fetch(`${config.hostName}/page-content-reader?requestURL=${this.nextChapterURL()}&spellCorrectEnabled=${this.spellCorrectEnabled()}`);
-                }
                 $(".paragraph").click(function (event) {
                     console.log("P Clicked " + event.target.id);
                     let paragphNumber = parseInt(event.target.id.replace("paragraph-", ""));
@@ -266,9 +279,11 @@ define(["require", "exports", "../accUtils", "../appUtils", "knockout", "oj-c/in
             });
         }
         pauseAction() {
-            let self = this;
-            self.audioPlayer.pause();
-            self.playerControls.playEnabled(false);
+            return __awaiter(this, void 0, void 0, function* () {
+                let self = this;
+                yield self.audioPlayer.pause();
+                self.playerControls.playEnabled(false);
+            });
         }
         playAction() {
             let self = this;

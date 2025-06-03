@@ -13,9 +13,6 @@ import TTSModule from '../tts/tts.module';
   ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..','..', '..', 'FrontEnd-App','web'),
       serveRoot: '/ui', // Oracle JET will be served under /ui/
-    }),ServeStaticModule.forRoot({
-      rootPath: join('./', 'dist', 'tts-audio'),
-      serveRoot: '/tts-audio', // Oracle JET will be served under /ui/
     })],
   providers: [WebsocketEventListener, SwitchBinder],
 })

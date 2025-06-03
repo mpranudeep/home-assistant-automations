@@ -1,0 +1,93 @@
+nohup: ignoring input
+
+> home-assistant-automations@1.0.0 start
+> node dist/main.js
+
+undefined
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[95m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [95m  DEBUG[39m [38;5;3m[SwitchBinder] [39m[95mSwitch bind path /home/mpranudeep/production/home-assistant-automations/BackEnd-App/config/switch-binder.json[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mIptvModule dependencies initialized[39m[38;5;3m +4ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPageContentReaderModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTTSModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDiscoveryModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mServeStaticModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mEventEmitterModule dependencies initialized[39m[38;5;3m +0ms[39m
+Web Port : 5555
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mIptvController {/}:[39m[38;5;3m +10ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/iptv/halltv.m3u, GET} route[39m[38;5;3m +6ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPageContentReaderController {/page-content-reader}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/page-content-reader, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mTtsController {/api/text-to-speech}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/text-to-speech/get-file, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/text-to-speech/convert, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/text-to-speech/convert, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/text-to-speech/delete-file, GET} route[39m[38;5;3m +1ms[39m
+(node:121249) [DEP0147] DeprecationWarning: In future versions of Node.js, fs.rmdir(path, { recursive: true }) will be removed. Use fs.rm(path, { recursive: true }) instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[PiperManager] [39m[32mInitializing PiperManager...[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[PiperManager] [39m[32mPiper binary and model ready[39m
+[32m[Nest] 121249  - [39m06/03/2025, 7:35:33 AM [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +9ms[39m
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom error]	entity not found:&nbsp; undefined
+[xmldom warning]	unclosed xml attribute undefined
+[xmldom error]	element parse error: Error: invalid tagName: undefined
+[xmldom error]	entity not found:&nbsp; undefined
+Next Chapter node - https://novelbin.com/b/cultivation-chat-group/chapter-1409
+[95m[Nest] 121249  - [39m06/03/2025, 7:35:57 AM [95m  DEBUG[39m [38;5;3m[PageContentReader] [39m[95mTitle: Cultivation Chat Group #Chapter 1408 - May the true holy light smile upon you, child - Read Cultivation Chat Group Chapter 1408 - May the true holy light smile upon you, child Online - All Page - Novel Bin[39m
+[95m[Nest] 121249  - [39m06/03/2025, 7:35:57 AM [95m  DEBUG[39m [38;5;3m[PageContentReader] [39m[95mContent length: 11430 chars[39m

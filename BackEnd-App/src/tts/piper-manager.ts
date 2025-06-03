@@ -9,19 +9,25 @@ import * as os from 'os';
 import * as tar from 'tar';
 import * as unzipper from 'unzipper';
 import * as fs from 'fs';
+import waitOn from 'wait-on';
+import { Mutex } from 'async-mutex';
 
 @Injectable()
 export class PiperManager implements OnModuleInit {
   private readonly logger = new Logger(PiperManager.name);
-  private readonly baseDir = path.join(__dirname, '..', 'piper');
+  private readonly baseDir = path.join(__dirname, '..', '..', 'rundata', 'piper');
   private readonly modelDir = path.join(this.baseDir, 'model');
   private readonly binaryPath = path.join(this.baseDir, 'piper', 'piper');
   private piperProcess: ReturnType<typeof spawn> | null = null;
   private busy = false;
-  private ttsFolder = path.join('./', 'dist', 'tts-audio');
+  private ttsFolder = path.join(this.baseDir, '..', 'tts-audio');
+  private fileUniqueKey: number = 1;
+  private readonly mutex = new Mutex();
 
   async onModuleInit(): Promise<void> {
-    fs.rmdirSync(this.ttsFolder, { recursive: true });
+    if (fs.existsSync(this.ttsFolder)) {
+      fs.rmdirSync(this.ttsFolder, { recursive: true });
+    }
     await mkdirAsync(this.ttsFolder, { recursive: true });
     this.logger.log('Initializing PiperManager...');
     await this.ensurePiperAndModel();
@@ -29,19 +35,35 @@ export class PiperManager implements OnModuleInit {
 
   }
 
+  async getTTSFile(fileName: string) {
+    let filePath = path.join(this.ttsFolder, fileName);
+    return filePath;
+  }
+
   private async ensurePiperAndModel(): Promise<void> {
     await mkdirAsync(this.modelDir, { recursive: true });
 
     const isWindows = os.platform() === 'win32';
-    const archiveName = isWindows ? 'piper_windows_amd64.zip' : 'piper_arm64.tar.gz';
-    const archiveUrl = isWindows
-      ? 'https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_windows_amd64.zip'
-      : 'https://github.com/rhasspy/piper/releases/download/v1.2.0/piper_arm64.tar.gz';
+    const isUbuntu = os.platform() === 'linux' && fs.existsSync('/etc/os-release') && fs.readFileSync('/etc/os-release', 'utf8').includes('Ubuntu');
+
+    let archiveName: string;
+    let archiveUrl: string;
+
+    if (isWindows) {
+      archiveName = 'piper_windows_amd64.zip';
+      archiveUrl = 'https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_windows_amd64.zip';
+    } else if (isUbuntu) {
+      archiveName = 'piper_linux_x86_64.tar.gz';
+      archiveUrl = 'https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_linux_x86_64.tar.gz';
+    } else {
+      // Fallback or other platform (e.g., ARM Linux)
+      archiveName = 'piper_arm64.tar.gz';
+      archiveUrl = 'https://github.com/rhasspy/piper/releases/download/v1.2.0/piper_arm64.tar.gz';
+    }
 
     const archivePath = path.join(this.baseDir, archiveName);
 
-
-    if (!(existsSync(this.binaryPath + ".exe") || existsSync(this.binaryPath))) {
+    if (!(existsSync(this.binaryPath + '.exe') || existsSync(this.binaryPath))) {
       this.logger.log(`Downloading Piper binary from ${archiveUrl} to ${this.binaryPath}`);
       await this.downloadFile(archiveUrl, archivePath);
 
@@ -81,15 +103,16 @@ export class PiperManager implements OnModuleInit {
   private async initializePiper(opts: { model: string; config: string }) {
     if (this.piperProcess) return;
 
+    this.logger.debug(`Binary path - ${this.binaryPath}`);
+
     // let outputFolder = path.resolve(this.ttsFolder);
 
     // '--config', path.join(this.modelDir, opts.config),
     this.piperProcess = spawn(this.binaryPath, [
       '--model', path.resolve(path.join(this.modelDir, opts.model)),
       '--json-input',
-      '--cuda',
       `--output_folder`, path.resolve(this.ttsFolder)
-    ]   , {
+    ], {
       cwd: this.ttsFolder // Set the working directory
     });
 
@@ -121,17 +144,28 @@ export class PiperManager implements OnModuleInit {
 
   async speakToFile(text: string): Promise<string> {
     await this.initializePiper({ model: 'en_US-ryan-high.onnx', config: 'en_US-ryan-high.onnx.json' });
-    return await this.processRequest(text);
+
+    return this.mutex.runExclusive(async () => {
+      return await this.processRequest(text);
+    });
   }
 
   private async processRequest(text: string): Promise<string> {
     this.busy = true;
-    
 
-    const filename = `speech-${Date.now()}.wav`;
+
+    const filename = `speech-${Date.now()}-${this.fileUniqueKey}.wav`;
+    this.fileUniqueKey++;
+
     const outputPath = path.join(this.ttsFolder, filename);
 
-    this.piperProcess?.stdin?.write(JSON.stringify({ text, output_file: path.basename(outputPath) }) + '\n');
+    // this.piperProcess?.stdin?.write(JSON.stringify({ text, output_file: path.basename(outputPath) }) + '\n');
+
+    setTimeout(() => {
+      this.piperProcess?.stdin?.write(
+        JSON.stringify({ text, output_file: path.basename(outputPath) }) + '\n'
+      );
+    }, 0);
 
     try {
       await this.waitForFileWriteComplete(outputPath);
@@ -142,51 +176,21 @@ export class PiperManager implements OnModuleInit {
     return outputPath;
   }
 
-  private async waitForFileWriteComplete(
-    filePath: string,
-    timeout = 10000,
-    interval = 500,
-    stableCountRequired = 3
-  ): Promise<void> {
-    const start = Date.now();
-    let prevSize = -1;
-    let stableCount = 0;
-
-    return new Promise((resolve, reject) => {
-      const check = () => {
-        try {
-          const stats = statSync(filePath);
-          const currentSize = stats.size;
-            
-          if (currentSize === prevSize) {
-            stableCount++;
-          } else {
-            stableCount = 0;
-          }
-
-          prevSize = currentSize;
-
-          if (stableCount >= stableCountRequired && currentSize > 0) {
-            this.logger.debug(`File is stable - ${filePath} (size: ${currentSize})`);
-            return resolve();
-          }
-        } catch (err: any) {
-          if (err.code !== 'ENOENT') {
-            return reject(err); // throw if it's not a "file doesn't exist" error
-          }
-          // File not yet created; just wait and try again
-        }
-
-        if (Date.now() - start > timeout) {
-          return reject(new Error(`File write timeout: ${filePath}`));
-        }
-
-        setTimeout(check, interval);
-      };
-
-      check(); // Start checking immediately
-    });
+  private async waitForFileWriteComplete(filePath: string): Promise<void> {
+    try {
+      console.log(`Awaiting for file : ${filePath}`);
+      await waitOn({
+        resources: [filePath],
+        delay: 0,
+        interval: 100,
+        timeout: 1000*60*5,
+        window: 1000,
+      });
+      console.log(`File ready: ${filePath}`);
+    } catch (err) {
+      console.error(`❌ Timeout or error waiting for file: ${filePath}`, err);
+      throw err;
+    }
   }
-
 
 }

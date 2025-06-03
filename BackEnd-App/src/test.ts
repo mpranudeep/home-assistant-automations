@@ -1,7 +1,13 @@
+import { textSpanContainsPosition } from "typescript";
 import PageContentReader from "./page-content-reader/PageContentReader";
+import { PiperManager } from "./tts/piper-manager";
 
 
+async function test(){
+    let p = new PiperManager();
+    await p.onModuleInit();
+    p.speakToFile("Hello world");
+}
 
+test();
 
-let reader = new PageContentReader();
-console.log(reader.getReadableContent(`https://novelbin.com/b/online-game-god-level-assassin-i-am-the-shadow/chapter-1i-was-betrayed-by-my-sister-only-to-be-reborn`));

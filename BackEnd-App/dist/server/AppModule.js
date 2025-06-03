@@ -28,9 +28,6 @@ exports.AppModule = AppModule = __decorate([
             serve_static_1.ServeStaticModule.forRoot({
                 rootPath: (0, path_1.join)(__dirname, '..', '..', '..', 'FrontEnd-App', 'web'),
                 serveRoot: '/ui', // Oracle JET will be served under /ui/
-            }), serve_static_1.ServeStaticModule.forRoot({
-                rootPath: (0, path_1.join)('./', 'dist', 'tts-audio'),
-                serveRoot: '/tts-audio', // Oracle JET will be served under /ui/
             })],
         providers: [WebsocketEventListener_1.WebsocketEventListener, SwitchBinder_1.SwitchBinder],
     })

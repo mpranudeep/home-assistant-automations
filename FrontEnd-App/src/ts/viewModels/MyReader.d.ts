@@ -42,7 +42,7 @@ declare class MyReaderViewModel {
     pauseButtonClicked: (event: Event) => void;
     nextButtonClicked: (event: Event) => void;
     prevButtonClicked: (event: Event) => void;
-    pauseAction(): void;
+    pauseAction(): Promise<void>;
     playAction(): void;
 }
 export = MyReaderViewModel;
