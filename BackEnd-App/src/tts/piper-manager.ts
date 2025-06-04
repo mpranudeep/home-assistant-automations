@@ -19,7 +19,6 @@ export class PiperManager implements OnModuleInit {
   private readonly modelDir = path.join(this.baseDir, 'model');
   private readonly binaryPath = path.join(this.baseDir, 'piper', 'piper');
   private piperProcess: ReturnType<typeof spawn> | null = null;
-  private busy = false;
   private ttsFolder = path.join(this.baseDir, '..', 'tts-audio');
   private fileUniqueKey: number = 1;
   private readonly mutex = new Mutex();
@@ -151,8 +150,6 @@ export class PiperManager implements OnModuleInit {
   }
 
   private async processRequest(text: string): Promise<string> {
-    this.busy = true;
-
 
     const filename = `speech-${Date.now()}-${this.fileUniqueKey}.wav`;
     this.fileUniqueKey++;
@@ -167,12 +164,7 @@ export class PiperManager implements OnModuleInit {
       );
     }, 0);
 
-    try {
-      await this.waitForFileWriteComplete(outputPath);
-      this.busy = false;
-    } catch (err) {
-      this.busy = false;
-    }
+    await this.waitForFileWriteComplete(outputPath);
     return outputPath;
   }
 
@@ -184,7 +176,7 @@ export class PiperManager implements OnModuleInit {
         delay: 0,
         interval: 100,
         timeout: 1000*60*5,
-        window: 1000,
+        window: 100,
       });
       console.log(`File ready: ${filePath}`);
     } catch (err) {
