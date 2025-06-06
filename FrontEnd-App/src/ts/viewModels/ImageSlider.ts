@@ -13,7 +13,7 @@ import * as $ from 'jquery';
 import ArrayDataProvider = require('ojs/ojarraydataprovider');
 import { ojMessage } from 'ojs/ojmessage';
 import 'ojs/ojmessages';
- import 'ojs/ojselectcombobox';
+import 'ojs/ojselectcombobox';
 
 class Image {
     link: string = "";

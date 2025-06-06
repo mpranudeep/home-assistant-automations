@@ -5,7 +5,11 @@
   "dependencies": {
     "@oracle/oraclejet": "~16.1.0",
     "@oracle/oraclejet-core-pack": "~16.1.0",
+    "@types/express": "^5.0.2",
+    "@types/node": "^22.15.30",
     "bower": "^1.8.14",
+    "cors": "^2.8.5",
+    "node-hid": "^3.2.0",
     "ojet": "^0.0.1"
   },
   "devDependencies": {
@@ -14,7 +18,7 @@
     "extract-zip": "^1.7.0",
     "fs-extra": "^8.1.0",
     "glob": "7.2.0",
-    "typescript": "5.3.2",
+    "typescript": "^5.3.2",
     "underscore": "^1.10.2",
     "yargs-parser": "13.1.2"
   },

@@ -55,11 +55,7 @@ class RootViewModel {
                 
 
     const navData = [
-      { path: "", redirect: "dashboard" },
-      { path: "dashboard", detail: { label: "Dashboard", iconClass: "oj-ux-ico-bar-chart" } },
-      { path: "incidents", detail: { label: "Incidents", iconClass: "oj-ux-ico-fire" } },
-      { path: "customers", detail: { label: "Customers", iconClass: "oj-ux-ico-contact-group" } },
-      { path: "about", detail: { label: "About", iconClass: "oj-ux-ico-information-s" } },
+      { path: "MyLogiFlow", detail: { label: "Logitech Flow", iconClass: "oj-ux-ico-information-s" } },
       { path: "MyReader", detail: { label: "My Reader", iconClass: "oj-ux-ico-information-s" } },
       { path: "ImageSlider", detail: { label: "Image Slider", iconClass: "oj-ux-ico-information-s" } }
     ];

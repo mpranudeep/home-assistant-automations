@@ -7,9 +7,11 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import PageContentReaderModule from '../page-content-reader/PageContentReaderModule';
 import TTSModule from '../tts/tts.module';
+import MyLogiFlowModule from '../my-logi-flow/MyLogiFlowModule';
+
 
 @Module({
-  imports: [EventEmitterModule.forRoot(),IptvModule,PageContentReaderModule,TTSModule,
+  imports: [EventEmitterModule.forRoot(),IptvModule,PageContentReaderModule,TTSModule, 
   ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..','..', '..', 'FrontEnd-App','web'),
       serveRoot: '/ui', // Oracle JET will be served under /ui/
