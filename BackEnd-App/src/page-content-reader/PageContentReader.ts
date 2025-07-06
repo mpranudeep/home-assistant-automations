@@ -94,7 +94,7 @@ export default class PageContentReader {
     let args: string[] = [];
 
     if (!isWindows) {
-      // executablePath = '/usr/bin/chromium';
+      executablePath = '/usr/bin/chromium';
       args = ['--no-sandbox', '--disable-setuid-sandbox']
     }
 
