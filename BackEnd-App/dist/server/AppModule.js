@@ -19,13 +19,12 @@ const serve_static_1 = require("@nestjs/serve-static");
 const path_1 = require("path");
 const PageContentReaderModule_1 = __importDefault(require("../page-content-reader/PageContentReaderModule"));
 const tts_module_1 = __importDefault(require("../tts/tts.module"));
-const MyLogiFlowModule_1 = __importDefault(require("../my-logi-flow/MyLogiFlowModule"));
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [event_emitter_1.EventEmitterModule.forRoot(), IptvModule_1.IptvModule, PageContentReaderModule_1.default, tts_module_1.default, MyLogiFlowModule_1.default,
+        imports: [event_emitter_1.EventEmitterModule.forRoot(), IptvModule_1.IptvModule, PageContentReaderModule_1.default, tts_module_1.default,
             serve_static_1.ServeStaticModule.forRoot({
                 rootPath: (0, path_1.join)(__dirname, '..', '..', '..', 'FrontEnd-App', 'web'),
                 serveRoot: '/ui', // Oracle JET will be served under /ui/
