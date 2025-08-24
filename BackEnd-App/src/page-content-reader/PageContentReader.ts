@@ -8,6 +8,7 @@ import xpath from 'xpath';
 import * as os from 'os';
 import { Browser, computeExecutablePath } from '@puppeteer/browsers';
 import { cp } from 'fs';
+import axios from 'axios';
 
 
 
@@ -34,10 +35,18 @@ export default class PageContentReader {
 
   public async getReadableContent(url: string): Promise<{ title: string; content: string, nextChapterURL: string | undefined | null }> {
     try {
-      const html = await this.fetchPageContentWithPuppeteer(url);
+      let html = undefined;
+
+      // const html = await this.fetchPageContentWithPuppeteer(url);
+      try{
+        this.log.debug(`Fetching page content with Cloudflare check for URL: ${url}`);
+        html = await this.fetchPageContentWithPuppeteer(url);
+      }catch(err){
+        this.log.warn(`Cloudflare check failed, falling back to Cloudflarr for URL: ${url}`);
+        html = await this.fetchPageContentWithFlare(url);
+      }
 
       const xmlDom = new XmlDomParser({
-
       }).parseFromString(html);
 
       const select = xpath.useNamespaces({ x: 'http://www.w3.org/1999/xhtml' });
@@ -68,7 +77,7 @@ export default class PageContentReader {
       let plainText = convert(article.content, { wordwrap: false });
 
       plainText = this.removeLinks(plainText);
-      
+
       this.log.debug(`Title: ${title}`);
       this.log.debug(`Content length: ${plainText.length} chars`);
       // this.log.debug(`${plainText}`);
@@ -84,6 +93,60 @@ export default class PageContentReader {
       throw err;
     }
   }
+
+  private async fetchPageContentWithFlare(url: string) {
+    try {
+      const response = await axios.post('http://192.168.68.120:6003/v1', {
+        cmd: 'request.get',
+        url: url,
+        maxTimeout: 60000
+      });
+
+      console.log('Status:', response.data.status);
+      // console.log('Page HTML:', response.data.solution.response); // Full HTML content
+      return response.data.solution.response;
+    } catch (error) {
+      // @ts-ignore
+      console.error('Error fetching page:', error.message);
+    }
+    return "";
+  }
+
+
+  private async fetchWithCloudflareCheck(url: string) {
+    try {
+      const response = await axios.get(url, {
+        validateStatus: () => true, // prevent throwing on non-200 codes
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+            "AppleWebKit/537.36 (KHTML, like Gecko) " +
+            "Chrome/123.0.0.0 Safari/537.36"
+        }
+      });
+
+      const html = response.data;
+      const status = response.status;
+
+      // Heuristics for Cloudflare
+      if (
+        status === 403 ||
+        status === 503 ||
+        html.includes("Attention Required!") ||
+        html.includes("Checking your browser before accessing") ||
+        html.includes("Cloudflare Ray ID")
+      ) {
+        console.log("⚠️ Request was blocked by Cloudflare");
+        throw new Error("Blocked by Cloudflare");
+      } else {
+        console.log("✅ Page loaded successfully");
+      }
+
+    } catch (error:any) {
+      console.error("Request failed:", error.message);
+      throw new Error("Blocked by Cloudflare");
+    }
+  }
+
 
   private async fetchPageContentWithPuppeteer(url: string): Promise<string> {
 
@@ -107,7 +170,7 @@ export default class PageContentReader {
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     );
 
-    
+
     try {
       // await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
       await page.goto(url, {

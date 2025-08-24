@@ -19,6 +19,7 @@ const serve_static_1 = require("@nestjs/serve-static");
 const path_1 = require("path");
 const PageContentReaderModule_1 = __importDefault(require("../page-content-reader/PageContentReaderModule"));
 const tts_module_1 = __importDefault(require("../tts/tts.module"));
+const DnsServerModule_1 = __importDefault(require("../dns-server/DnsServerModule"));
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -28,7 +29,7 @@ exports.AppModule = AppModule = __decorate([
             serve_static_1.ServeStaticModule.forRoot({
                 rootPath: (0, path_1.join)(__dirname, '..', '..', '..', 'FrontEnd-App', 'web'),
                 serveRoot: '/ui', // Oracle JET will be served under /ui/
-            })],
+            }), DnsServerModule_1.default],
         providers: [WebsocketEventListener_1.WebsocketEventListener, SwitchBinder_1.SwitchBinder],
     })
 ], AppModule);

@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  homeassistant-ext:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: homeassistant-ext
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./data:/data
+    environment:
+      - TZ=Asia/Kolkata

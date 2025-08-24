@@ -9,7 +9,6 @@
     "@types/node": "^22.15.30",
     "bower": "^1.8.14",
     "cors": "^2.8.5",
-    "node-hid": "^3.2.0",
     "ojet": "^0.0.1"
   },
   "devDependencies": {
