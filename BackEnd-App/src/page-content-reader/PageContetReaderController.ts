@@ -20,12 +20,21 @@ export default class PageContentReaderController{
           .map(i=>{
             return {line:i}
            });
+        
+        let newLines:any[] = [];
+
+        for(let eachLine of lines){
+          if(eachLine.line.toLowerCase().indexOf(`Tap the screen to use advanced tools Tip`.toLowerCase())>=0){
+            break;
+          }
+          newLines.push(eachLine);
+        }
 
         return {
             nextChapterURL : response.nextChapterURL,
             novelName : "",
             chapterHeading : "",
-            items : lines
+            items : newLines
         };  
 
   }

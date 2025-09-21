@@ -5,9 +5,8 @@ define(["require", "exports"], function (require, exports) {
     function getConfiguration() {
         let restHostURL = window.APP_REST_REQUESTS_HOST;
         let config = {};
-        restHostURL = `http://${window.location.hostname}:${window.location.port}`;
         if (!restHostURL) {
-            restHostURL = "http://localhost:8089";
+            restHostURL = `http://${window.location.hostname}:5555`;
         }
         config.hostName = restHostURL;
         return config;

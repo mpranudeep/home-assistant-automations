@@ -4,9 +4,8 @@ import { PiperManager } from "./tts/piper-manager";
 
 
 async function test(){
-    let p = new PiperManager();
-    await p.onModuleInit();
-    p.speakToFile("Hello world");
+    let p = new PageContentReader();
+    console.log('Final response -> ' + await p.callOllama('Hello !!'));
 }
 
 test();

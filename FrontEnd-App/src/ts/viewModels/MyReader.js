@@ -259,6 +259,9 @@ define(["require", "exports", "../accUtils", "../appUtils", "knockout", "oj-c/in
                     self.novelParagraphs.push(ob);
                 }
                 this.nextChapterURL(response.nextChapterURL);
+                if (this.nextChapterURL()) {
+                    fetch(`${config.hostName}/page-content-reader?requestURL=${this.nextChapterURL()}&spellCorrectEnabled=${this.spellCorrectEnabled()}`);
+                }
                 $(".paragraph").click(function (event) {
                     console.log("P Clicked " + event.target.id);
                     let paragphNumber = parseInt(event.target.id.replace("paragraph-", ""));

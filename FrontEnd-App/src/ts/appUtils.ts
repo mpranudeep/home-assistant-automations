@@ -10,10 +10,10 @@ export function getConfiguration(): Configuration {
     let config: any = {};
 
     // @ts-ignore
-    restHostURL = `http://${window.location.hostname}:${window.location.port}`;
+    // restHostURL = `http://${window.location.hostname}:${window.location.port}`;
 
     if (!restHostURL) {
-        restHostURL = "http://localhost:8089"
+        restHostURL = `http://${window.location.hostname}:5555`
     }
     config.hostName = restHostURL;
     return config;
