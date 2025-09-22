@@ -12,3 +12,18 @@ services:
       - ./data:/data
     environment:
       - TZ=Asia/Kolkata
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    ports:
+      - 6003:8191
+    environment:
+      - LOG_LEVEL=info
+    networks:
+      - mediastack_net
+    restart: unless-stopped
+
+networks:
+  mediastack_net:
+    driver: bridge

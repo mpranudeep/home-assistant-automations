@@ -6,7 +6,7 @@ define(["require", "exports"], function (require, exports) {
         let restHostURL = window.APP_REST_REQUESTS_HOST;
         let config = {};
         if (!restHostURL) {
-            restHostURL = `http://${window.location.hostname}:5555`;
+            restHostURL = `http://${window.location.hostname}`;
         }
         config.hostName = restHostURL;
         return config;

@@ -9,6 +9,6 @@ const Constants_1 = __importDefault(require("./common/Constants"));
 async function bootstrap() {
     const app = await core_1.NestFactory.create(AppModule_1.AppModule);
     console.log(`Web Port : ${Constants_1.default.WEB_PORT}`);
-    await app.listen(Constants_1.default.WEB_PORT);
+    await app.listen(Constants_1.default.WEB_PORT, '0.0.0.0');
 }
 bootstrap();

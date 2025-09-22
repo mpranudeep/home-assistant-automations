@@ -13,7 +13,7 @@ export function getConfiguration(): Configuration {
     // restHostURL = `http://${window.location.hostname}:${window.location.port}`;
 
     if (!restHostURL) {
-        restHostURL = `http://${window.location.hostname}:5555`
+        restHostURL = `http://${window.location.hostname}`
     }
     config.hostName = restHostURL;
     return config;

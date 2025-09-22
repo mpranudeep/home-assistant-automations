@@ -103,12 +103,25 @@ export default class PageContentReader {
   // -------------------
   private async fetchHtmlWithFallback(url: string): Promise<string> {
     try {
+      // Try Flare first
       return await this.fetchPageContentWithFlare(url);
-    } catch {
-      this.log.warn(`Flare failed, retrying for URL: ${url}`);
-      return await this.fetchPageContentWithFlare(url);
+    } catch (err) {
+      this.log.warn(`Flare failed for URL: ${url}, falling back...`, err);
+
+      try {
+        // Fallback to plain fetch
+        const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+        if (!res.ok) {
+          throw new Error(`Fallback fetch failed with status: ${res.status}`);
+        }
+        return await res.text();
+      } catch (fallbackErr) {
+        this.log.error(`Both Flare and fallback failed for URL: ${url}`, fallbackErr);
+        throw fallbackErr;
+      }
     }
   }
+
 
   private async fetchPageContentWithFlare(url: string): Promise<string> {
     const response = await axios.post("http://192.168.68.120:6003/v1", {
@@ -184,7 +197,7 @@ export default class PageContentReader {
         break;
       filtered.push(line);
     }
-    
+
     const segments = this.splitIntoThree(filtered);
 
     const translated = await this.translateLinesWithOllama(segments);
@@ -242,8 +255,7 @@ You are a professional novel refiner.
 - Preserve the tone, style, and emotions of the original.
 - Do not summarize or shorten. Translate every line fully.
 - Make the English smooth and readable, like a published novel.
-- Keep character names, places, and cultivation terms in pinyin without translation.
-- Finally, refine the translation to sound like high-quality English prose while keeping the meaning faithful.
+- Finally, refine the translation and keep   it simple and clear.
 
 Chinese text:
 ${chunk.join("\n")}
@@ -258,7 +270,7 @@ ${chunk.join("\n")}
   // -------------------
   async callOllama(prompt: string) {
     this.log.debug(`Ollama prompt length: ${prompt.length}`);
-    const response = await fetch("http://localhost:11434/api/generate", {
+    const response = await fetch("http://192.168.68.123:11434/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model: "mistral:7b", prompt, stream: false }),
