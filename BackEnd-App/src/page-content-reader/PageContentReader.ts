@@ -13,7 +13,7 @@ const contentCache = new SimpleCache<{
   title: string;
   content: string;
   nextChapterURL: string | null | undefined;
-}>(1000 * 60 * 60, "rundata/cache"); 
+}>(1000 * 60 * 60, "rundata/cache");
 
 export default class PageContentReader {
   private log = new Logger(PageContentReader.name);
@@ -69,77 +69,77 @@ export default class PageContentReader {
   // SCRAPING + PARSING
   // -------------------
   private async scrapeAndProcessContent(url: string) {
-  try {
-    let title: string;
-    let lines: string[] = [];
-    let xmlDom: any;
+    try {
+      let title: string;
+      let lines: string[] = [];
+      let xmlDom: any;
 
-    if (url.includes("wtr-lab.com")) {
-      // Extract identifiers
-      const match = url.match(/serie-(\d+)\/([^/]+)\/chapter-(\d+)/i);
-      if (!match) {
-        throw new Error("Invalid wtr-lab URL format");
+      if (url.includes("wtr-lab.com")) {
+        // Extract identifiers
+        const match = url.match(/serie-(\d+)\/([^/]+)\/chapter-(\d+)/i);
+        if (!match) {
+          throw new Error("Invalid wtr-lab URL format");
+        }
+
+        const rawId = parseInt(match[1], 10);
+        const chapterNo = parseInt(match[3], 10);
+        const payload = {
+          translate: "web",
+          language: "en",
+          raw_id: rawId,
+          chapter_no: chapterNo,
+          retry: false,
+          force_retry: false,
+        };
+
+        const response = await fetch("https://wtr-lab.com/api/reader/get", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(`wtr-lab API failed: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        lines = data?.data?.data?.body ?? [];
+        title = `Chapter ${chapterNo}`;
+
+        // Minimal XML DOM to keep handler consistent
+        xmlDom = new XmlDomParser().parseFromString("<root></root>");
+      } else {
+        // Default scraping fallback
+        const html = await this.fetchHtmlWithFallback(url);
+        xmlDom = new XmlDomParser().parseFromString(html);
+        const dom = new JSDOM(html, { url });
+        const reader = new Readability(dom.window.document);
+        const article = reader.parse();
+
+        if (!article?.content) {
+          throw new Error("Could not parse article content.");
+        }
+
+        title = article.title?.trim() || this.getTitleFromUrl(url);
+        const plainText = this.removeLinks(
+          convert(article.content, { wordwrap: false })
+        );
+        lines = this.sanitizeLines(plainText);
       }
 
-      const rawId = parseInt(match[1], 10);
-      const chapterNo = parseInt(match[3], 10);
-      const payload = {
-        translate: "web",
-        language: "en",
-        raw_id: rawId,
-        chapter_no: chapterNo,
-        retry: false,
-        force_retry: false,
-      };
+      // ✅ Unified handler
+      const siteHandler = this.getSiteHandler(url);
+      const { content, nextChapterURL } = await siteHandler(xmlDom, url, lines);
 
-      const response = await fetch("https://wtr-lab.com/api/reader/get", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      this.log.debug(`Title: ${title}`);
+      this.log.debug(`Content length: ${content.length} chars`);
 
-      if (!response.ok) {
-        throw new Error(`wtr-lab API failed: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      lines = data?.data?.data?.body ?? [];
-      title = `Chapter ${chapterNo}`;
-
-      // Minimal XML DOM to keep handler consistent
-      xmlDom = new XmlDomParser().parseFromString("<root></root>");
-    } else {
-      // Default scraping fallback
-      const html = await this.fetchHtmlWithFallback(url);
-      xmlDom = new XmlDomParser().parseFromString(html);
-      const dom = new JSDOM(html, { url });
-      const reader = new Readability(dom.window.document);
-      const article = reader.parse();
-
-      if (!article?.content) {
-        throw new Error("Could not parse article content.");
-      }
-
-      title = article.title?.trim() || this.getTitleFromUrl(url);
-      const plainText = this.removeLinks(
-        convert(article.content, { wordwrap: false })
-      );
-      lines = this.sanitizeLines(plainText);
+      return { title, content, nextChapterURL };
+    } catch (err: any) {
+      this.log.error(`Error scraping ${url}: ${err.stack || err.message}`);
+      throw err;
     }
-
-    // ✅ Unified handler
-    const siteHandler = this.getSiteHandler(url);
-    const { content, nextChapterURL } = await siteHandler(xmlDom, url, lines);
-
-    this.log.debug(`Title: ${title}`);
-    this.log.debug(`Content length: ${content.length} chars`);
-
-    return { title, content, nextChapterURL };
-  } catch (err: any) {
-    this.log.error(`Error scraping ${url}: ${err.stack || err.message}`);
-    throw err;
   }
-}
 
 
 
@@ -228,7 +228,7 @@ export default class PageContentReader {
 
     const nextChapterURL = await this.extractDXMWXNext(xmlDom, baseUrl);
     const segments = this.splitIntoThree(filtered);
-    const translated = await this.translateLinesWithOllama(segments);
+    const translated = await this.refineWithOllama(segments);
 
     return { content: translated.join("\n"), nextChapterURL };
   }
@@ -246,7 +246,7 @@ export default class PageContentReader {
 
     const segments = this.splitIntoThree(filtered);
 
-    const translated = await this.translateLinesWithOllama(segments);
+    const translated = await this.refineWithOllama(segments);
 
     const node = xpath.select1(
       "//*[contains(@class, 'chnav') and contains(@class, 'next')]",
@@ -272,10 +272,12 @@ export default class PageContentReader {
 
     const segments = this.splitIntoThree(filtered);
 
-    const translated = await this.translateLinesWithOllama(segments);
+    let translated = await this.translateLinesWithOllama(segments);
 
+    const tsegments = this.splitIntoThree(translated);
 
-
+    let refined = await this.refineWithOllama(tsegments);
+    
     function getNextChapterUrl(url: string): string | null {
       const match = url.match(/(chapter-)(\d+)/i);
       if (match && match[2]) {
@@ -289,7 +291,7 @@ export default class PageContentReader {
 
     const nextChapterURL = getNextChapterUrl(baseUrl);
 
-    return { content: translated.join("\n\n"), nextChapterURL };
+    return { content: refined.join("\n\n"), nextChapterURL };
   }
 
   private async extractDXMWXNext(xmlDom: any, baseUrl: string) {
@@ -327,14 +329,16 @@ export default class PageContentReader {
   }
 
   private async translateLinesWithOllama(chunks: string[][]): Promise<string[]> {
+    console.log("Translating with Ollama...");
     const results: string[] = [];
     for (const chunk of chunks) {
-      const translated = await this.callOllama(`
-You are a professional novel refiner. 
+      const translated = await this.callOllama("yi:6b", `
+You are a professional novel translator. 
 - Preserve the tone, style, and emotions of the original.
 - Do not summarize or shorten. Translate every line fully.
-- Make the English smooth and readable, like a published novel.
-- Finally, refine the translation and keep it simple and clear.
+- Translate sentence by sentence, keeping the structure.
+- Do no translate names of people, places, or specific terms.
+- 'High-light' or 'highlight' is not a name, translate it as 'Gao Guang'.
 
 Chinese text:
 ${chunk.join("\n")}
@@ -343,18 +347,41 @@ ${chunk.join("\n")}
     }
     return results;
   }
- async callOllamaD(prompt: string) {
-  return prompt;
- }
+
+  private async refineWithOllama(chunks: string[][]): Promise<string[]> {
+    console.log("Refining with Ollama...");
+    const results: string[] = [];
+    for (const chunk of chunks) {
+      const translated = await this.callOllama(null, `
+You are a professional novel refiner. 
+- Correct grammar, improve flow, and enhance readability.
+- Do not summarize or shorten. Refine and keep every line fully.
+- Keep the English simple and clear.
+
+Novel text:
+${chunk.join("\n")}
+      `);
+      results.push(translated);
+    }
+    return results;
+  }
+
+
+  async callOllamaD(prompt: string) {
+    return prompt;
+  }
   // -------------------
   // OLLAMA CALL
   // -------------------
-  async callOllama(prompt: string) {
+  async callOllama(model: string | undefined | null, prompt: string) {
+    if (!model) {
+      model = "mistral:7b"
+    }
     this.log.debug(`Ollama prompt length: ${prompt.length}`);
     const response = await fetch("http://192.168.68.123:11434/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "mistral:7b", prompt, stream: false }),
+      body: JSON.stringify({ model: model, prompt, stream: false }),
     });
 
     if (!response.ok) {
@@ -362,6 +389,8 @@ ${chunk.join("\n")}
     }
 
     const data = await response.json();
+    console.log(`Response -`);
+    console.log(data.response);
     return data.response ?? "";
   }
 }
