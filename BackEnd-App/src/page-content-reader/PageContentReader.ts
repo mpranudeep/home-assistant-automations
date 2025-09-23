@@ -13,7 +13,7 @@ const contentCache = new SimpleCache<{
   title: string;
   content: string;
   nextChapterURL: string | null | undefined;
-}>(1000 * 60 * 10); // 10 minutes
+}>(1000 * 60 * 60, "rundata/cache"); 
 
 export default class PageContentReader {
   private log = new Logger(PageContentReader.name);
@@ -69,9 +69,49 @@ export default class PageContentReader {
   // SCRAPING + PARSING
   // -------------------
   private async scrapeAndProcessContent(url: string) {
-    try {
+  try {
+    let title: string;
+    let lines: string[] = [];
+    let xmlDom: any;
+
+    if (url.includes("wtr-lab.com")) {
+      // Extract identifiers
+      const match = url.match(/serie-(\d+)\/([^/]+)\/chapter-(\d+)/i);
+      if (!match) {
+        throw new Error("Invalid wtr-lab URL format");
+      }
+
+      const rawId = parseInt(match[1], 10);
+      const chapterNo = parseInt(match[3], 10);
+      const payload = {
+        translate: "web",
+        language: "en",
+        raw_id: rawId,
+        chapter_no: chapterNo,
+        retry: false,
+        force_retry: false,
+      };
+
+      const response = await fetch("https://wtr-lab.com/api/reader/get", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`wtr-lab API failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      lines = data?.data?.data?.body ?? [];
+      title = `Chapter ${chapterNo}`;
+
+      // Minimal XML DOM to keep handler consistent
+      xmlDom = new XmlDomParser().parseFromString("<root></root>");
+    } else {
+      // Default scraping fallback
       const html = await this.fetchHtmlWithFallback(url);
-      const xmlDom = new XmlDomParser().parseFromString(html);
+      xmlDom = new XmlDomParser().parseFromString(html);
       const dom = new JSDOM(html, { url });
       const reader = new Readability(dom.window.document);
       const article = reader.parse();
@@ -80,23 +120,28 @@ export default class PageContentReader {
         throw new Error("Could not parse article content.");
       }
 
-      const title = article.title?.trim() || this.getTitleFromUrl(url);
-      let plainText = this.removeLinks(convert(article.content, { wordwrap: false }));
-      let lines = this.sanitizeLines(plainText);
-
-      // Dispatch to site-specific handler
-      const siteHandler = this.getSiteHandler(url);
-      const { content, nextChapterURL } = await siteHandler(xmlDom, url, lines);
-
-      this.log.debug(`Title: ${title}`);
-      this.log.debug(`Content length: ${content.length} chars`);
-
-      return { title, content, nextChapterURL };
-    } catch (err: any) {
-      this.log.error(`Error scraping ${url}: ${err.stack || err.message}`);
-      throw err;
+      title = article.title?.trim() || this.getTitleFromUrl(url);
+      const plainText = this.removeLinks(
+        convert(article.content, { wordwrap: false })
+      );
+      lines = this.sanitizeLines(plainText);
     }
+
+    // ✅ Unified handler
+    const siteHandler = this.getSiteHandler(url);
+    const { content, nextChapterURL } = await siteHandler(xmlDom, url, lines);
+
+    this.log.debug(`Title: ${title}`);
+    this.log.debug(`Content length: ${content.length} chars`);
+
+    return { title, content, nextChapterURL };
+  } catch (err: any) {
+    this.log.error(`Error scraping ${url}: ${err.stack || err.message}`);
+    throw err;
   }
+}
+
+
 
   // -------------------
   // FETCH METHODS
@@ -158,6 +203,7 @@ export default class PageContentReader {
     if (url.includes("novelbin")) return this.handleNovelBin.bind(this);
     if (url.includes("dxmwx")) return this.handleDXMWX.bind(this);
     if (url.includes("fanmtl")) return this.handleFanMTL.bind(this);
+    if (url.includes("wtr-lab")) return this.handleWTRLab.bind(this);
     return async (_xml, _base, lines) => ({
       content: lines.join("\n"),
       nextChapterURL: null,
@@ -213,6 +259,39 @@ export default class PageContentReader {
     return { content: translated.join("\n\n"), nextChapterURL };
   }
 
+  private async handleWTRLab(xmlDom: any, baseUrl: string, lines: string[]) {
+    let filtered = [];
+    for (const line of lines) {
+      if (
+        line.toLowerCase().includes("(end of this chapter)") ||
+        line.toLowerCase().includes("tap the screen to use advanced tools tip")
+      )
+        break;
+      filtered.push(line);
+    }
+
+    const segments = this.splitIntoThree(filtered);
+
+    const translated = await this.translateLinesWithOllama(segments);
+
+
+
+    function getNextChapterUrl(url: string): string | null {
+      const match = url.match(/(chapter-)(\d+)/i);
+      if (match && match[2]) {
+        const currentChapter = parseInt(match[2], 10);
+        const nextChapter = currentChapter + 1;
+        return url.replace(/chapter-\d+/i, `chapter-${nextChapter}`);
+      }
+      return null;
+    }
+
+
+    const nextChapterURL = getNextChapterUrl(baseUrl);
+
+    return { content: translated.join("\n\n"), nextChapterURL };
+  }
+
   private async extractDXMWXNext(xmlDom: any, baseUrl: string) {
     const nodes = xpath.select("//div[@onclick='JumpNext();']/a", xmlDom) as any[];
     if (!nodes?.length) return null;
@@ -255,7 +334,7 @@ You are a professional novel refiner.
 - Preserve the tone, style, and emotions of the original.
 - Do not summarize or shorten. Translate every line fully.
 - Make the English smooth and readable, like a published novel.
-- Finally, refine the translation and keep   it simple and clear.
+- Finally, refine the translation and keep it simple and clear.
 
 Chinese text:
 ${chunk.join("\n")}
@@ -264,7 +343,9 @@ ${chunk.join("\n")}
     }
     return results;
   }
-
+ async callOllamaD(prompt: string) {
+  return prompt;
+ }
   // -------------------
   // OLLAMA CALL
   // -------------------
