@@ -8,12 +8,13 @@ import xpath from "xpath";
 import * as os from "os";
 import axios from "axios";
 import { SimpleCache } from "../common/SimpleCache";
+import { GoogleGenAI } from "@google/genai";
 
 const { Translate } = require('@google-cloud/translate').v2;
 const path = require('path');
 
 // Set the path relative to your script's location
-const keyPath = path.join('src','google_key.json');
+const keyPath = path.join('src', 'google_key.json');
 
 const translate = new Translate({
   keyFilename: keyPath,
@@ -25,6 +26,8 @@ const contentCache = new SimpleCache<{
   content: string;
   nextChapterURL: string | null | undefined;
 }>(1000 * 60 * 60, "rundata/cache");
+
+const ai = new GoogleGenAI({});
 
 export default class PageContentReader {
   private log = new Logger(PageContentReader.name);
@@ -287,13 +290,15 @@ export default class PageContentReader {
 
     let translated = await this.googleTranslateText(segments.flat());
 
-    if(translated === undefined) {
+    if (translated === undefined) {
       throw new Error("Google Translate failed");
     }
 
-    const nsegments = this.splitIntoThree(translated);
+    // const nsegments = this.splitIntoThree(translated);
 
-    let refined = await this.refineWithOllama(nsegments);
+    // let refined = await this.refineWithOllama(nsegments);
+
+    let refined = [await this.refineWithGemini(translated.join("\n"))];
 
     function getNextChapterUrl(url: string): string | null {
       const match = url.match(/(chapter-)(\d+)/i);
@@ -409,6 +414,18 @@ ${chunk.join("\n")}
     console.log(`Response -`);
     console.log(data.response);
     return data.response ?? "";
+  }
+
+  
+
+  async refineWithGemini(promt: string): Promise<string|undefined> {
+    console.log("Refining with Gemini...");
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: promt,
+    });
+    console.log(response.text);
+    return response.text;
   }
 
   async googleTranslateText(text: string[], targetLanguage = 'en'): Promise<string[] | undefined> {
