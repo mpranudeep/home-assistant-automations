@@ -9,6 +9,17 @@ import * as os from "os";
 import axios from "axios";
 import { SimpleCache } from "../common/SimpleCache";
 
+const { Translate } = require('@google-cloud/translate').v2;
+const path = require('path');
+
+// Set the path relative to your script's location
+const keyPath = path.join('src','google_key.json');
+
+const translate = new Translate({
+  keyFilename: keyPath,
+  projectId: 'deployment-69423'
+});
+
 const contentCache = new SimpleCache<{
   title: string;
   content: string;
@@ -272,12 +283,18 @@ export default class PageContentReader {
 
     const segments = this.splitIntoThree(filtered);
 
-    let translated = await this.translateLinesWithOllama(segments);
+    // let translated = await this.translateLinesWithOllama(segments);
 
-    const tsegments = this.splitIntoThree(translated);
+    let translated = await this.googleTranslateText(segments.flat());
 
-    let refined = await this.refineWithOllama(tsegments);
-    
+    if(translated === undefined) {
+      throw new Error("Google Translate failed");
+    }
+
+    const nsegments = this.splitIntoThree(translated);
+
+    let refined = await this.refineWithOllama(nsegments);
+
     function getNextChapterUrl(url: string): string | null {
       const match = url.match(/(chapter-)(\d+)/i);
       if (match && match[2]) {
@@ -393,4 +410,21 @@ ${chunk.join("\n")}
     console.log(data.response);
     return data.response ?? "";
   }
+
+  async googleTranslateText(text: string[], targetLanguage = 'en'): Promise<string[] | undefined> {
+    try {
+      let [translations] = await translate.translate(text, targetLanguage);
+      translations = Array.isArray(translations) ? translations : [translations];
+
+      console.log('Translations:');
+      // @ts-ignore
+      translations.forEach((translation, i) => {
+        console.log(`${text[i]} => ${translation}`);
+      });
+      return translations;
+    } catch (error) {
+      console.error('ERROR:', error);
+    }
+  }
+
 }

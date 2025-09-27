@@ -110,6 +110,8 @@ export class PiperManager implements OnModuleInit {
     this.piperProcess = spawn(this.binaryPath, [
       '--model', path.resolve(path.join(this.modelDir, opts.model)),
       '--json-input',
+      '--cuda',
+      '--use-cuda',
       `--output_folder`, path.resolve(this.ttsFolder)
     ], {
       cwd: this.ttsFolder // Set the working directory
