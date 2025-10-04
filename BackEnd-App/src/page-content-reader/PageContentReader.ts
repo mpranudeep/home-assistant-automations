@@ -224,10 +224,20 @@ export default class PageContentReader {
     });
   }
 
-  private async handleNovelBin(xmlDom: any) {
+  private async handleNovelBin(xmlDom: any,baseUrl:string,lines:string[]) {
     const node = xpath.select1("//a[@id='next_chap']", xmlDom) as any;
+
+    
+    // let refined = await this.refineWithOllama(splitLines);
+
+    let refined = [await this.refineWithGemini(lines.join("\n"))];
+
+    // let splitLines = this.splitIntoThree(lines);
+    // refined = refined.map(r => r.replace(/\n/g, "\n\n"));
+
+    let content = refined.join("\n\n");
     return {
-      content: "", // raw lines already handled by readability
+      content: content, // raw lines already handled by readability
       nextChapterURL: node?.getAttribute("href") ?? null,
     };
   }
@@ -418,11 +428,21 @@ ${chunk.join("\n")}
 
   
 
-  async refineWithGemini(promt: string): Promise<string|undefined> {
+  async refineWithGemini(prompt: string): Promise<string|undefined> {
     console.log("Refining with Gemini...");
+    prompt = `
+      You are a professional novel refiner. 
+      - Correct grammar, improve flow, and enhance readability.
+      - Do not summarize or shorten. 
+      - Refine and keep every line fully.
+      - Keep the English simple and clear.
+
+      Novel text:
+      ${prompt}
+            `;
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: promt,
+      contents: prompt,
     });
     console.log(response.text);
     return response.text;
