@@ -9,6 +9,7 @@ import * as os from "os";
 import axios from "axios";
 import { SimpleCache } from "../common/SimpleCache";
 import { GoogleGenAI } from "@google/genai";
+import { promises as fs } from "fs";
 
 const { Translate } = require('@google-cloud/translate').v2;
 const path = require('path');
@@ -218,16 +219,17 @@ export default class PageContentReader {
     if (url.includes("dxmwx")) return this.handleDXMWX.bind(this);
     if (url.includes("fanmtl")) return this.handleFanMTL.bind(this);
     if (url.includes("wtr-lab")) return this.handleWTRLab.bind(this);
+    if (url.includes("69shuba")) return this.handle69shuba.bind(this);
     return async (_xml, _base, lines) => ({
       content: lines.join("\n"),
       nextChapterURL: null,
     });
   }
 
-  private async handleNovelBin(xmlDom: any,baseUrl:string,lines:string[]) {
+  private async handleNovelBin(xmlDom: any, baseUrl: string, lines: string[]) {
     const node = xpath.select1("//a[@id='next_chap']", xmlDom) as any;
 
-    
+
     // let refined = await this.refineWithOllama(splitLines);
 
     let refined = [await this.refineWithGemini(lines.join("\n"))];
@@ -281,6 +283,22 @@ export default class PageContentReader {
     const nextChapterURL = href ? new URL(href, baseUrl).toString() : null;
 
     return { content: translated.join("\n\n"), nextChapterURL };
+  }
+
+  private async handle69shuba(xmlDom: any, baseUrl: string, lines: string[]) {
+
+    let translated = await this.googleTranslateText(lines);
+
+    if (translated === undefined) {
+      throw new Error("Google Translate failed");
+    }
+
+    let refined = [await this.refineWithGemini(translated.join("\n"))];
+
+    const node = xpath.select1("//div[@class='page1']/a[4]", xmlDom) as any;
+    const nextChapterURL = node?.getAttribute("href") ?? null;
+
+    return { content: refined.join("\n\n"), nextChapterURL };
   }
 
   private async handleWTRLab(xmlDom: any, baseUrl: string, lines: string[]) {
@@ -426,42 +444,93 @@ ${chunk.join("\n")}
     return data.response ?? "";
   }
 
-  
 
-  async refineWithGemini(prompt: string): Promise<string|undefined> {
+
+  async refineWithGemini(prompt: string): Promise<string | undefined> {
     console.log("Refining with Gemini...");
-    prompt = `
-      You are a professional novel refiner. 
-      - Correct grammar, improve flow, and enhance readability.
-      - Do not summarize or shorten. 
-      - Refine and keep every line fully.
-      - Keep the English simple and clear.
 
-      Novel text:
-      ${prompt}
-            `;
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
-    console.log(response.text);
-    return response.text;
+    // Read the prompt template from a file
+    let template: string;
+    try {
+      template = await fs.readFile(path.join("config","refine_prompt.txt"), "utf8");
+    } catch (err) {
+      console.error("Failed to read refine_prompt.txt:", err);
+      return undefined;
+    }
+
+    // Replace placeholder or append novel text
+    const fullPrompt = `${template.trim()}\n\nNovel text:\n${prompt}`;
+
+    let model = "gemini-2.5-flash"; // default to flash; can switch to pro if needed
+
+    const maxRetries = 3;
+    const retryDelayMs = 60 * 1000; // 1 minute
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: fullPrompt,
+        });
+
+        const text = response?.text?.trim();
+        if (text) {
+          console.log("Refinement successful.");
+          return text;
+        } else {
+          console.warn("Empty response from Gemini.");
+        }
+
+      } catch (error: any) {
+        const status = error?.status || error?.response?.status;
+
+        if (status === 503) {
+          console.warn(`Gemini returned 503 (attempt ${attempt}/${maxRetries}). Retrying in 1 minute...`);
+          if (attempt < maxRetries) {
+            await new Promise(res => setTimeout(res, retryDelayMs));
+            continue;
+          }
+        }
+
+        console.error(`Gemini refinement failed on attempt ${attempt}:`, error);
+        throw error; // Stop if not 503 or after last retry
+      }
+    }
+
+    console.error("Refinement failed after all retries.");
+    return undefined;
   }
+
 
   async googleTranslateText(text: string[], targetLanguage = 'en'): Promise<string[] | undefined> {
     try {
-      let [translations] = await translate.translate(text, targetLanguage);
-      translations = Array.isArray(translations) ? translations : [translations];
+      console.log("Translating with Google Translate...");
 
-      console.log('Translations:');
-      // @ts-ignore
-      translations.forEach((translation, i) => {
-        console.log(`${text[i]} => ${translation}`);
-      });
-      return translations;
+      const BATCH_SIZE = 125;
+      const allTranslations: string[] = [];
+
+      for (let i = 0; i < text.length; i += BATCH_SIZE) {
+        const batch = text.slice(i, i + BATCH_SIZE);
+        console.log(`Translating batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(text.length / BATCH_SIZE)} (${batch.length} items)...`);
+
+        let [translations] = await translate.translate(batch, targetLanguage);
+        translations = Array.isArray(translations) ? translations : [translations];
+
+        // Log each translation pair
+        // @ts-ignore
+        translations.forEach((translation, j) => {
+          console.log(`${batch[j]} => ${translation}`);
+        });
+
+        allTranslations.push(...translations);
+      }
+
+      console.log(`Total translated items: ${allTranslations.length}`);
+      return allTranslations;
     } catch (error) {
       console.error('ERROR:', error);
     }
   }
+
 
 }
