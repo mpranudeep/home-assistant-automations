@@ -10,6 +10,8 @@ import axios from "axios";
 import { SimpleCache } from "../common/SimpleCache";
 import { GoogleGenAI } from "@google/genai";
 import { promises as fs } from "fs";
+import dotenv from 'dotenv';
+dotenv.config();
 
 const { Translate } = require('@google-cloud/translate').v2;
 const path = require('path');
@@ -17,10 +19,10 @@ const path = require('path');
 // Set the path relative to your script's location
 const keyPath = path.join('src', 'google_key.json');
 
-const translate = new Translate({
-  keyFilename: keyPath,
-  projectId: 'deployment-69423'
-});
+
+const translate = new Translate({key:process.env.AC_MP_GOOGLE_API_KEY});
+
+const ai = new GoogleGenAI({apiKey:process.env.AC_HK_GOOGLE_API_KEY});
 
 const contentCache = new SimpleCache<{
   title: string;
@@ -28,7 +30,7 @@ const contentCache = new SimpleCache<{
   nextChapterURL: string | null | undefined;
 }>(1000 * 60 * 60, "rundata/cache");
 
-const ai = new GoogleGenAI({});
+
 
 export default class PageContentReader {
   private log = new Logger(PageContentReader.name);
