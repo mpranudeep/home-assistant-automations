@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    container_name: libretranslate
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      # Load only Chinese and English models
+      - LT_LOAD_ONLY=zh,en
+
+      # Enable GPU support
+      - LT_GPU_ENABLED=true
+      - LT_MARIAN_GPU=true
+      - LT_DEBUG=true
+      - NVIDIA_VISIBLE_DEVICES=all
+
+      # Cache directory for models
+      - LT_CACHE_DIR=/app/cache
+
+    volumes:
+      - libretranslate_cache:/app/cache
+
+    # ✅ GPU support for normal docker-compose (requires NVIDIA container toolkit)
+    deploy: {}
+    runtime: nvidia
+
+volumes:
+  libretranslate_cache:
