@@ -289,13 +289,14 @@ export default class PageContentReader {
 
   private async handle69shuba(xmlDom: any, baseUrl: string, lines: string[]) {
 
-    let translated = await this.googleTranslateText(lines);
+    // let translated = await this.googleTranslateText(lines);
 
-    if (translated === undefined) {
-      throw new Error("Google Translate failed");
-    }
+    // if (translated === undefined) {
+    //   throw new Error("Google Translate failed");
+    // }
 
-    let refined = [await this.refineWithGemini(translated.join("\n"))];
+    // let refined = [await this.refineWithGemini(translated.join("\n"))];
+    let refined = [await this.refineWithGemini(lines.join("\n"))];
 
     const node = xpath.select1("//div[@class='page1']/a[4]", xmlDom) as any;
     const nextChapterURL = node?.getAttribute("href") ?? null;
