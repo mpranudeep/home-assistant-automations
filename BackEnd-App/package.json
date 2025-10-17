@@ -15,6 +15,7 @@
   "description": "",
   "dependencies": {
     "@google-cloud/translate": "^9.2.0",
+    "@google/genai": "^1.21.0",
     "@mozilla/readability": "^0.6.0",
     "@nestjs/cli": "^11.0.6",
     "@nestjs/event-emitter": "^3.0.1",
