@@ -264,18 +264,15 @@ export default class PageContentReader {
   private async handleFanMTL(xmlDom: any, baseUrl: string, lines: string[]) {
     let filtered = [];
     for (const line of lines) {
-      if (
-        line.toLowerCase().includes("(end of this chapter)") ||
-        line.toLowerCase().includes("tap the screen to use advanced tools tip")
-      )
-        break;
+      if (line.toLowerCase().includes("YOU'LL ALSO LIKE".toLowerCase())) break;
       filtered.push(line);
     }
 
-    const segments = this.splitIntoThree(filtered);
+    const tanslated = await this.refineWithGemini(filtered.join("\n"));
 
-    const translated = await this.refineWithOllama(segments);
-
+    if(!tanslated) {
+      throw new Error("Gemini refinement failed");
+    }
     const node = xpath.select1(
       "//*[contains(@class, 'chnav') and contains(@class, 'next')]",
       xmlDom
@@ -284,7 +281,7 @@ export default class PageContentReader {
     const href = node?.getAttribute("href") ?? null;
     const nextChapterURL = href ? new URL(href, baseUrl).toString() : null;
 
-    return { content: translated.join("\n\n"), nextChapterURL };
+    return { content: tanslated, nextChapterURL };
   }
 
   private async handle69shuba(xmlDom: any, baseUrl: string, lines: string[]) {
@@ -464,6 +461,8 @@ ${chunk.join("\n")}
     // Replace placeholder or append novel text
     const fullPrompt = `${template.trim()}\n\nNovel text:\n${prompt}`;
 
+    console.log(`Full prompt: ${fullPrompt}`);
+
     let model = "gemini-2.5-flash"; // default to flash; can switch to pro if needed
 
     const maxRetries = 3;
@@ -475,6 +474,10 @@ ${chunk.join("\n")}
           model,
           contents: fullPrompt,
         });
+        // @ts-ignore
+        console.log(`Response status - ${response?.status}`);
+        
+        console.log(`JSON - ${JSON.stringify(response)}`);
 
         const text = response?.text?.trim();
         if (text) {
