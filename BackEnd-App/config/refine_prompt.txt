@@ -3,4 +3,4 @@ You are a professional novel refiner & translator.
 - Do not summarize or shorten.
 - Refine and keep every line fully.
 - Keep the English simple and clear.
- 
+- Instead of Decurion, Centurian - Use modern terms like Squad leader etc

@@ -93,13 +93,14 @@ export default class PageContentReader {
 
       if (url.includes("wtr-lab.com")) {
         // Extract identifiers
-        const match = url.match(/serie-(\d+)\/([^/]+)\/chapter-(\d+)/i);
+        const match = url.match(/\/novel\/(\d+)\/[^/]+\/chapter-(\d+)/i);
+
         if (!match) {
           throw new Error("Invalid wtr-lab URL format");
         }
 
         const rawId = parseInt(match[1], 10);
-        const chapterNo = parseInt(match[3], 10);
+        const chapterNo = parseInt(match[2], 10);
         const payload = {
           translate: "web",
           language: "en",
@@ -312,21 +313,7 @@ export default class PageContentReader {
       filtered.push(line);
     }
 
-    const segments = this.splitIntoThree(filtered);
-
-    // let translated = await this.translateLinesWithOllama(segments);
-
-    let translated = await this.googleTranslateText(segments.flat());
-
-    if (translated === undefined) {
-      throw new Error("Google Translate failed");
-    }
-
-    // const nsegments = this.splitIntoThree(translated);
-
-    // let refined = await this.refineWithOllama(nsegments);
-
-    let refined = [await this.refineWithGemini(translated.join("\n"))];
+    let refined = [await this.refineWithGemini(filtered.join("\n"))];
 
     function getNextChapterUrl(url: string): string | null {
       const match = url.match(/(chapter-)(\d+)/i);
