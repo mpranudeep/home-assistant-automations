@@ -452,6 +452,8 @@ ${chunk.join("\n")}
 
     let model = "gemini-2.5-flash"; // default to flash; can switch to pro if needed
 
+    model = "gemini-2.5-flash-lite";
+
     const maxRetries = 3;
     const retryDelayMs = 60 * 1000; // 1 minute
 
