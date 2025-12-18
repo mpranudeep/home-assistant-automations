@@ -11,6 +11,8 @@ import { SimpleCache } from "../common/SimpleCache";
 import { GoogleGenAI } from "@google/genai";
 import { promises as fs } from "fs";
 import dotenv from 'dotenv';
+import * as cheerio from "cheerio";
+
 dotenv.config();
 
 const { Translate } = require('@google-cloud/translate').v2;
@@ -223,24 +225,58 @@ export default class PageContentReader {
     if (url.includes("fanmtl")) return this.handleFanMTL.bind(this);
     if (url.includes("wtr-lab")) return this.handleWTRLab.bind(this);
     if (url.includes("69shuba")) return this.handle69shuba.bind(this);
+    if (url.includes("royalroad")) return this.handleRoyalRoad.bind(this);
+    if (url.includes("novel122")) return this.handleNovel122.bind(this);
     return async (_xml, _base, lines) => ({
       content: lines.join("\n"),
       nextChapterURL: null,
     });
   }
 
+   private async handleNovel122(xmlDom: any, baseUrl: string, lines: string[]) {
+
+    const $ = cheerio.load(xmlDom.toString());
+
+    const next = $(".chap-select a").last();
+    const href = next.attr("href");
+
+    const nextChapterURL = href ? new URL(href, baseUrl).toString() : null;
+
+      let content = lines.join("\n");
+
+        return {
+          content: content, // raw lines already handled by readability
+          nextChapterURL: nextChapterURL
+        };
+   }
+
+  private async handleRoyalRoad(xmlDom: any, baseUrl: string, lines: string[]) {
+      const title = xpath.select1("//div[contains(@class, \"fic-header\")]//h1", xmlDom) as any;
+    
+      let content =  title.textContent.trim() +' \n' + lines.join("\n");
+
+      let refined = [await this.refineWithGemini(content)].join("\n\n");
+
+      let nextChapter = xpath.select1("//a[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'next chapter')]",xmlDom) as any;
+      const href = nextChapter?.getAttribute("href") ?? null;
+      const nextChapterURL = href ? new URL(href, baseUrl).toString() : null;
+
+       return {
+      content: refined, // raw lines already handled by readability
+      nextChapterURL: nextChapterURL
+    };
+  }
+
+
+
   private async handleNovelBin(xmlDom: any, baseUrl: string, lines: string[]) {
     const node = xpath.select1("//a[@id='next_chap']", xmlDom) as any;
 
-
-    // let refined = await this.refineWithOllama(splitLines);
+    // let refined = await this.refineWithOllama(this.splitIntoThree(lines)).map(r => r.replace(/\n/g, "\n\n"));
 
     let refined = [await this.refineWithGemini(lines.join("\n"))];
 
-    // let splitLines = this.splitIntoThree(lines);
-    // refined = refined.map(r => r.replace(/\n/g, "\n\n"));
-
-    let content = refined.join("\n\n");
+    let content = refined.join("\n");
     return {
       content: content, // raw lines already handled by readability
       nextChapterURL: node?.getAttribute("href") ?? null,
@@ -385,15 +421,25 @@ ${chunk.join("\n")}
     return results;
   }
 
+  private async refineWithOllamaNew(prompt: string): Promise<string> {
+    console.log("Refining with Ollama...");
+    let refined = await this.refineWithOllama(this.splitIntoThree(prompt.split("\n")));
+    return refined.join("\n\n");
+  }
+
   private async refineWithOllama(chunks: string[][]): Promise<string[]> {
     console.log("Refining with Ollama...");
     const results: string[] = [];
+    let template: string="";
+      try {
+      template = await fs.readFile(path.join("config","refine_prompt.txt"), "utf8");
+    } catch (err) {
+      console.error("Failed to read refine_prompt.txt:", err);
+    }
+
     for (const chunk of chunks) {
       const translated = await this.callOllama(null, `
-You are a professional novel refiner. 
-- Correct grammar, improve flow, and enhance readability.
-- Do not summarize or shorten. Refine and keep every line fully.
-- Keep the English simple and clear.
+${template.trim()}
 
 Novel text:
 ${chunk.join("\n")}
@@ -454,7 +500,7 @@ ${chunk.join("\n")}
 
     model = "gemini-2.5-flash-lite";
 
-    const maxRetries = 3;
+    const maxRetries = 1;
     const retryDelayMs = 60 * 1000; // 1 minute
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -479,12 +525,14 @@ ${chunk.join("\n")}
       } catch (error: any) {
         const status = error?.status || error?.response?.status;
 
-        if (status === 503) {
+        if (status === 503 || status === 429) {
           console.warn(`Gemini returned 503 (attempt ${attempt}/${maxRetries}). Retrying in 1 minute...`);
           if (attempt < maxRetries) {
             await new Promise(res => setTimeout(res, retryDelayMs));
             continue;
           }
+
+          return await this.refineWithOllamaNew(prompt);
         }
 
         console.error(`Gemini refinement failed on attempt ${attempt}:`, error);
