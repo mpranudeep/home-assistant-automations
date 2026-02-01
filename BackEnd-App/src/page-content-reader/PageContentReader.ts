@@ -3,6 +3,7 @@ import { Readability } from "@mozilla/readability";
 import { Logger } from "@nestjs/common";
 import { convert } from "html-to-text";
 import puppeteer from "puppeteer";
+import type { Browser, Page } from "puppeteer";
 import { DOMParser as XmlDomParser } from "xmldom";
 import xpath from "xpath";
 import * as os from "os";
@@ -36,16 +37,23 @@ const contentCache = new SimpleCache<{
 
 export default class PageContentReader {
   private log = new Logger(PageContentReader.name);
-  // @ts-ignore
-  private browser: puppeteer.Browser | null = null;
-  // @ts-ignore
-  private page: puppeteer.Page | null = null;
+  private browser: Browser | null = null;
+  private page: Page | null = null;
+  private browserInUse = false;
+  private browserCloseTimeout: NodeJS.Timeout | null = null;
 
   // -------------------
-  // INITIALIZATION
+  // INITIALIZATION & CLEANUP
   // -------------------
   private async initializeBrowser() {
-    if (this.browser) return;
+    if (this.browser && this.page) {
+      this.browserInUse = true;
+      if (this.browserCloseTimeout) {
+        clearTimeout(this.browserCloseTimeout);
+        this.browserCloseTimeout = null;
+      }
+      return;
+    }
 
     const isWindows = os.platform() === "win32";
     let executablePath: string | undefined = undefined;
@@ -67,27 +75,55 @@ export default class PageContentReader {
       "AppleWebKit/537.36 (KHTML, like Gecko) " +
       "Chrome/120.0.0.0 Safari/537.36"
     );
+    this.browserInUse = true;
+  }
+
+  private async releaseBrowser() {
+    this.browserInUse = false;
+    // Only close after a period of inactivity (prevent accidental rapid open/close)
+    if (this.browserCloseTimeout) clearTimeout(this.browserCloseTimeout);
+    this.browserCloseTimeout = setTimeout(async () => {
+      try {
+        if (this.browser) {
+          await this.browser.close();
+          this.browser = null;
+          this.page = null;
+        }
+      } catch (e: any) {
+        this.log.warn("Failed to close Puppeteer browser cleanly: " + (e.stack || e.message));
+      }
+    }, 120000); // 2 minutes inactivity timeout
   }
 
   // -------------------
   // PUBLIC ENTRYPOINT
   // -------------------
-  public async getReadableContent(url: string) {
-    const cached = contentCache.get(url);
+  /**
+   * Main entrypoint. Returns processed content for a URL, with optional spell correction.
+   * @param url - The URL of the page to read
+   * @param spellCorrectEnabled - Whether to run AI spell/grammar correction
+   */
+  public async getReadableContent(url: string, spellCorrectEnabled: boolean = false) {
+    if (!url || typeof url !== "string" || !/^https?:\/\//.test(url)) {
+      this.log.warn("Invalid or missing URL input to getReadableContent");
+      throw new Error("Invalid or missing URL. Must be a valid http(s) URL.");
+    }
+    const cacheKey = `${url}|${!!spellCorrectEnabled}`;
+    const cached = contentCache.get(cacheKey);
     if (cached) {
-      this.log.debug(`Cache hit for ${url}`);
+      this.log.debug(`Cache hit for ${url} [spellCorrect=${spellCorrectEnabled}]`);
       return cached;
     }
 
-    const result = await this.scrapeAndProcessContent(url);
-    contentCache.set(url, result);
+    const result = await this.scrapeAndProcessContent(url, spellCorrectEnabled);
+    contentCache.set(cacheKey, result);
     return result;
   }
 
   // -------------------
   // SCRAPING + PARSING
   // -------------------
-  private async scrapeAndProcessContent(url: string) {
+  private async scrapeAndProcessContent(url: string, spellCorrectEnabled: boolean = false) {
     try {
       let title: string;
       let lines: string[] = [];
@@ -149,7 +185,7 @@ export default class PageContentReader {
 
       // ✅ Unified handler
       const siteHandler = this.getSiteHandler(url);
-      const { content, nextChapterURL } = await siteHandler(xmlDom, url, lines);
+      const { content, nextChapterURL } = await siteHandler(xmlDom, url, lines, spellCorrectEnabled);
 
       this.log.debug(`Title: ${title}`);
       this.log.debug(`Content length: ${content.length} chars`);
@@ -204,10 +240,14 @@ export default class PageContentReader {
         waitUntil: "domcontentloaded",
         timeout: 30000,
       });
+      return await this.page!.content();
     } catch (err: any) {
-      this.log.warn(`Puppeteer timeout: ${err.message}`);
+      this.log.warn(`Puppeteer error/navigator timeout: ${err.message}`);
+      throw err;
+    } finally {
+      // Release browser for idle-close
+      await this.releaseBrowser();
     }
-    return await this.page!.content();
   }
 
   // -------------------
@@ -218,7 +258,8 @@ export default class PageContentReader {
   ): (
     xmlDom: any,
     baseUrl: string,
-    lines: string[]
+    lines: string[],
+    spellCorrectEnabled: boolean
   ) => Promise<{ content: string; nextChapterURL: string | null | undefined }> {
     if (url.includes("novelbin")) return this.handleNovelBin.bind(this);
     if (url.includes("dxmwx")) return this.handleDXMWX.bind(this);
@@ -227,118 +268,145 @@ export default class PageContentReader {
     if (url.includes("69shuba")) return this.handle69shuba.bind(this);
     if (url.includes("royalroad")) return this.handleRoyalRoad.bind(this);
     if (url.includes("novel122")) return this.handleNovel122.bind(this);
-    return async (_xml, _base, lines) => ({
+    if (url.includes("wuxiaworld")) return this.handleWuxiaWorld.bind(this);
+    return async (_xml, _base, lines, spellCorrectEnabled) => ({
       content: lines.join("\n"),
       nextChapterURL: null,
     });
   }
 
-   private async handleNovel122(xmlDom: any, baseUrl: string, lines: string[]) {
+  private async handleWuxiaWorld(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
+    // Use XPath to locate <a> with a child <button> whose text contains "next chapter" (case-insensitive)
+    let nextChapterURL: string | null = null;
 
+    // XPath: find <a> with a <button> descendant (or child) whose normalized text contains "next chapter" (case-insensitive)
+    // 1. Select all <a> elements with descendant <button> whose normalized text matches
+    // 2. Prefer descendant to allow nested buttons
+
+    // This XPath checks buttons that are descendants for broader matching
+    const nodes = xpath.select(
+      "//a[.//button[contains(translate(normalize-space(string(.)), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'next chapter')]]",
+      xmlDom
+    ) as any[];
+
+    if (nodes && nodes.length > 0) {
+      const aElem = nodes[0];
+      const href = aElem.getAttribute("href");
+      if (href) {
+        try {
+          nextChapterURL = new URL(href, baseUrl).toString();
+        } catch {
+          nextChapterURL = href;
+        }
+      }
+    }
+
+    let contentRaw = lines.join("\n");
+    let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
+
+    return {
+      content,
+      nextChapterURL
+    };
+  }
+
+   private async handleNovel122(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
     const $ = cheerio.load(xmlDom.toString());
-
     const next = $(".chap-select a").last();
     const href = next.attr("href");
-
     const nextChapterURL = href ? new URL(href, baseUrl).toString() : null;
-
-      let content = lines.join("\n");
-
-        return {
-          content: content, // raw lines already handled by readability
-          nextChapterURL: nextChapterURL
-        };
+    let contentRaw = lines.join("\n");
+    let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
+    return {
+      content: content,
+      nextChapterURL: nextChapterURL
+    };
    }
 
-  private async handleRoyalRoad(xmlDom: any, baseUrl: string, lines: string[]) {
-      const title = xpath.select1("//div[contains(@class, \"fic-header\")]//h1", xmlDom) as any;
-    
-      let content =  title.textContent.trim() +' \n' + lines.join("\n");
+  // Central helper: only refine if enabled, fallback to original if both AI fail.
+  private async refineWithFallback(text: string, spellCorrectEnabled: boolean): Promise<string> {
+    if (!spellCorrectEnabled) return text;
+    try {
+      const gemini = await this.refineWithGemini(text);
+      if (gemini && gemini.trim().length > 0) return gemini;
+    } catch (e) {
+      // continue to ollama fallback
+    }
+    try {
+      const ollama = await this.refineWithOllamaNew(text);
+      if (ollama && ollama.trim().length > 0) return ollama;
+    } catch (e) {
+      // final fallback
+    }
+    return text;
+  }
 
-      let refined = [await this.refineWithGemini(content)].join("\n\n");
+  private async handleRoyalRoad(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
+    const title = xpath.select1("//div[contains(@class, \"fic-header\")]//h1", xmlDom) as any;
+    let contentRaw =  title.textContent.trim() + ' \n' + lines.join("\n");
+    let refined = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
 
-      let nextChapter = xpath.select1("//a[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'next chapter')]",xmlDom) as any;
-      const href = nextChapter?.getAttribute("href") ?? null;
-      const nextChapterURL = href ? new URL(href, baseUrl).toString() : null;
+    let nextChapter = xpath.select1("//a[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'next chapter')]",xmlDom) as any;
+    const href = nextChapter?.getAttribute("href") ?? null;
+    const nextChapterURL = href ? new URL(href, baseUrl).toString() : null;
 
-       return {
-      content: refined, // raw lines already handled by readability
+    return {
+      content: refined,
       nextChapterURL: nextChapterURL
     };
   }
 
 
 
-  private async handleNovelBin(xmlDom: any, baseUrl: string, lines: string[]) {
+  private async handleNovelBin(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
     const node = xpath.select1("//a[@id='next_chap']", xmlDom) as any;
-
-    // let refined = await this.refineWithOllama(this.splitIntoThree(lines)).map(r => r.replace(/\n/g, "\n\n"));
-
-    let refined = [await this.refineWithGemini(lines.join("\n"))];
-
-    let content = refined.join("\n");
+    let contentRaw = lines.join("\n");
+    let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
     return {
-      content: content, // raw lines already handled by readability
+      content: content,
       nextChapterURL: node?.getAttribute("href") ?? null,
     };
   }
 
-  private async handleDXMWX(xmlDom: any, baseUrl: string, lines: string[]) {
+  private async handleDXMWX(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
     let filtered = [];
     for (const line of lines) {
       if (line.toLowerCase().includes("tap the screen to use advanced tools tip"))
         break;
       filtered.push(line);
     }
-
     const nextChapterURL = await this.extractDXMWXNext(xmlDom, baseUrl);
-    const segments = this.splitIntoThree(filtered);
-    const translated = await this.refineWithOllama(segments);
-
-    return { content: translated.join("\n"), nextChapterURL };
+    let contentRaw = filtered.join("\n");
+    let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
+    return { content, nextChapterURL };
   }
 
-  private async handleFanMTL(xmlDom: any, baseUrl: string, lines: string[]) {
+  private async handleFanMTL(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
     let filtered = [];
     for (const line of lines) {
       if (line.toLowerCase().includes("YOU'LL ALSO LIKE".toLowerCase())) break;
       filtered.push(line);
     }
-
-    const tanslated = await this.refineWithGemini(filtered.join("\n"));
-
-    if(!tanslated) {
-      throw new Error("Gemini refinement failed");
-    }
+    let contentRaw = filtered.join("\n");
+    let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
     const node = xpath.select1(
       "//*[contains(@class, 'chnav') and contains(@class, 'next')]",
       xmlDom
     ) as any;
-
     const href = node?.getAttribute("href") ?? null;
     const nextChapterURL = href ? new URL(href, baseUrl).toString() : null;
-
-    return { content: tanslated, nextChapterURL };
+    return { content, nextChapterURL };
   }
 
-  private async handle69shuba(xmlDom: any, baseUrl: string, lines: string[]) {
-
-    // let translated = await this.googleTranslateText(lines);
-
-    // if (translated === undefined) {
-    //   throw new Error("Google Translate failed");
-    // }
-
-    // let refined = [await this.refineWithGemini(translated.join("\n"))];
-    let refined = [await this.refineWithGemini(lines.join("\n"))];
-
+  private async handle69shuba(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
+    let contentRaw = lines.join("\n");
+    let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
     const node = xpath.select1("//div[@class='page1']/a[4]", xmlDom) as any;
     const nextChapterURL = node?.getAttribute("href") ?? null;
-
-    return { content: refined.join("\n\n"), nextChapterURL };
+    return { content, nextChapterURL };
   }
 
-  private async handleWTRLab(xmlDom: any, baseUrl: string, lines: string[]) {
+  private async handleWTRLab(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
     let filtered = [];
     for (const line of lines) {
       if (
@@ -348,8 +416,8 @@ export default class PageContentReader {
         break;
       filtered.push(line);
     }
-
-    let refined = [await this.refineWithGemini(filtered.join("\n"))];
+    let contentRaw = filtered.join("\n");
+    let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
 
     function getNextChapterUrl(url: string): string | null {
       const match = url.match(/(chapter-)(\d+)/i);
@@ -360,11 +428,8 @@ export default class PageContentReader {
       }
       return null;
     }
-
-
     const nextChapterURL = getNextChapterUrl(baseUrl);
-
-    return { content: refined.join("\n\n"), nextChapterURL };
+    return { content, nextChapterURL };
   }
 
   private async extractDXMWXNext(xmlDom: any, baseUrl: string) {
@@ -402,7 +467,7 @@ export default class PageContentReader {
   }
 
   private async translateLinesWithOllama(chunks: string[][]): Promise<string[]> {
-    console.log("Translating with Ollama...");
+    this.log.debug("Translating with Ollama...");
     const results: string[] = [];
     for (const chunk of chunks) {
       const translated = await this.callOllama("yi:6b", `
@@ -422,19 +487,19 @@ ${chunk.join("\n")}
   }
 
   private async refineWithOllamaNew(prompt: string): Promise<string> {
-    console.log("Refining with Ollama...");
+    this.log.debug("Refining with Ollama...");
     let refined = await this.refineWithOllama(this.splitIntoThree(prompt.split("\n")));
     return refined.join("\n\n");
   }
 
   private async refineWithOllama(chunks: string[][]): Promise<string[]> {
-    console.log("Refining with Ollama...");
+    this.log.debug("Refining with Ollama...");
     const results: string[] = [];
     let template: string="";
       try {
       template = await fs.readFile(path.join("config","refine_prompt.txt"), "utf8");
     } catch (err) {
-      console.error("Failed to read refine_prompt.txt:", err);
+      this.log.error("Failed to read refine_prompt.txt: " + err);
     }
 
     for (const chunk of chunks) {
@@ -472,29 +537,28 @@ ${chunk.join("\n")}
     }
 
     const data = await response.json();
-    console.log(`Response -`);
-    console.log(data.response);
+    this.log.debug("Ollama response received: " + String(data.response).slice(0, 60) + "...");
     return data.response ?? "";
   }
 
 
 
   async refineWithGemini(prompt: string): Promise<string | undefined> {
-    console.log("Refining with Gemini...");
+    this.log.debug("Refining with Gemini...");
 
     // Read the prompt template from a file
     let template: string;
     try {
       template = await fs.readFile(path.join("config","refine_prompt.txt"), "utf8");
     } catch (err) {
-      console.error("Failed to read refine_prompt.txt:", err);
+      this.log.error("Failed to read refine_prompt.txt: " + err);
       return undefined;
     }
 
     // Replace placeholder or append novel text
     const fullPrompt = `${template.trim()}\n\nNovel text:\n${prompt}`;
 
-    console.log(`Full prompt: ${fullPrompt}`);
+    this.log.debug(`Gemini full prompt length: ${fullPrompt.length}`);
 
     let model = "gemini-2.5-flash"; // default to flash; can switch to pro if needed
 
@@ -516,17 +580,17 @@ ${chunk.join("\n")}
 
         const text = response?.text?.trim();
         if (text) {
-          console.log("Refinement successful.");
+          this.log.debug("Gemini refinement successful.");
           return text;
         } else {
-          console.warn("Empty response from Gemini.");
+          this.log.warn("Empty response from Gemini.");
         }
 
       } catch (error: any) {
         const status = error?.status || error?.response?.status;
 
         if (status === 503 || status === 429) {
-          console.warn(`Gemini returned 503 (attempt ${attempt}/${maxRetries}). Retrying in 1 minute...`);
+          this.log.warn(`Gemini returned 503 (attempt ${attempt}/${maxRetries}). Retrying in 1 minute...`);
           if (attempt < maxRetries) {
             await new Promise(res => setTimeout(res, retryDelayMs));
             continue;
@@ -535,43 +599,42 @@ ${chunk.join("\n")}
           return await this.refineWithOllamaNew(prompt);
         }
 
-        console.error(`Gemini refinement failed on attempt ${attempt}:`, error);
+        this.log.error(`Gemini refinement failed on attempt ${attempt}: ${error}`);
         throw error; // Stop if not 503 or after last retry
       }
     }
 
-    console.error("Refinement failed after all retries.");
+    this.log.error("Refinement failed after all retries.");
     return undefined;
   }
 
 
   async googleTranslateText(text: string[], targetLanguage = 'en'): Promise<string[] | undefined> {
     try {
-      console.log("Translating with Google Translate...");
+      this.log.debug("Translating with Google Translate...");
 
       const BATCH_SIZE = 125;
       const allTranslations: string[] = [];
 
       for (let i = 0; i < text.length; i += BATCH_SIZE) {
         const batch = text.slice(i, i + BATCH_SIZE);
-        console.log(`Translating batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(text.length / BATCH_SIZE)} (${batch.length} items)...`);
+        this.log.debug(`Translating batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(text.length / BATCH_SIZE)} (${batch.length} items)...`);
 
         let [translations] = await translate.translate(batch, targetLanguage);
         translations = Array.isArray(translations) ? translations : [translations];
 
-        // Log each translation pair
         // @ts-ignore
         translations.forEach((translation, j) => {
-          console.log(`${batch[j]} => ${translation}`);
+          this.log.debug(`GoogleTranslate: "${batch[j]}" => "${translation}"`);
         });
 
         allTranslations.push(...translations);
       }
 
-      console.log(`Total translated items: ${allTranslations.length}`);
+      this.log.debug(`Total translated items: ${allTranslations.length}`);
       return allTranslations;
     } catch (error) {
-      console.error('ERROR:', error);
+      this.log.error('Google Translate ERROR: ' + error);
     }
   }
 

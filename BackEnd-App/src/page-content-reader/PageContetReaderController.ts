@@ -7,35 +7,39 @@ export default class PageContentReaderController{
    private pageContentReader = new PageContentReader();
 
   @Get()
-  async handleUrl(@Query('requestURL') inputURL: string) {
-       let response = await this.pageContentReader.getReadableContent(inputURL);
+  async handleUrl(
+      @Query('requestURL') inputURL: string,
+      @Query('spellCorrectEnabled') spellCorrectEnabled?: string
+  ) {
+      // If not present/default, treat as false
+      const shouldSpellCorrect = spellCorrectEnabled === "true" || spellCorrectEnabled === "1" || spellCorrectEnabled === "yes";
+      let response = await this.pageContentReader.getReadableContent(inputURL, shouldSpellCorrect);
 
-       const lines = response.content
-          .split('\n')
-          .map(line => {
-            // console.log(`--> ${line}`)
-            return line.trim()
-          })
-          .filter(line => line.length > 0)
-          .map(i=>{
-            return {line:i}
-           });
-        
-        let newLines:any[] = [];
+      const lines = response.content
+        .split('\n')
+        .map(line => {
+          // console.log(`--> ${line}`)
+          return line.trim()
+        })
+        .filter(line => line.length > 0)
+        .map(i=>{
+          return {line:i}
+         });
 
-        for(let eachLine of lines){
-          if(eachLine.line.toLowerCase().indexOf(`Tap the screen to use advanced tools Tip`.toLowerCase())>=0){
-            break;
-          }
-          newLines.push(eachLine);
+      let newLines:any[] = [];
+
+      for(let eachLine of lines){
+        if(eachLine.line.toLowerCase().indexOf(`Tap the screen to use advanced tools Tip`.toLowerCase())>=0){
+          break;
         }
+        newLines.push(eachLine);
+      }
 
-        return {
-            nextChapterURL : response.nextChapterURL,
-            novelName : "",
-            chapterHeading : "",
-            items : newLines
-        };  
-
+      return {
+          nextChapterURL : response.nextChapterURL,
+          novelName : "",
+          chapterHeading : "",
+          items : newLines
+      };
   }
 }
