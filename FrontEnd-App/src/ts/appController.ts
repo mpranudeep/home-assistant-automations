@@ -55,9 +55,10 @@ class RootViewModel {
                 
 
     const navData = [
-      { path: "MyLogiFlow", detail: { label: "Logitech Flow", iconClass: "oj-ux-ico-information-s" } },
-      { path: "MyReader", detail: { label: "My Reader", iconClass: "oj-ux-ico-information-s" } },
-      { path: "ImageSlider", detail: { label: "Image Slider", iconClass: "oj-ux-ico-information-s" } }
+      { path: "ImageSlider", detail: { label: "Image Slider", iconClass: "oj-ux-ico-information-s" }},
+      { path: "MyReader", detail: { label: "My Reader", iconClass: "oj-ux-ico-library" } },
+      { path: "Novels", detail: { label: "Novels", iconClass: "oj-ux-ico-library" } },
+      { path: "Preferences", detail: { label: "Preferences", iconClass: "oj-ux-ico-settings" } },
     ];
     // router setup
     const router = new CoreRouter(navData, {

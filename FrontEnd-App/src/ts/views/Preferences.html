@@ -1,0 +1,58 @@
+<!--
+  Copyright (c) 2014, 2024, Oracle and/or its affiliates.
+  Licensed under The Universal Permissive License (UPL), Version 1.0
+  as shown at https://oss.oracle.com/licenses/upl/
+-->
+<div class="oj-hybrid-padding">
+  <style>
+    .oj-preferences-label {
+      font-size: 18px;
+      padding-right: 8px;
+    }
+    .oj-preferences-section {
+      margin-bottom: 18px;
+    }
+  </style>
+  <h5>Preferences</h5>
+  <div class="oj-flex oj-sm-flex-direction-column">
+    <div class="oj-flex-item">
+      <oj-form-layout style="width:100%" columns="1" max-columns="1">
+        <oj-switch value="{{enableNotifications}}" label-edge="inside" label-hint="Enable Notifications"></oj-switch>
+        <oj-switch value="{{darkMode}}" label-edge="inside" label-hint="Dark Mode"></oj-switch>
+        <oj-switch value="{{autoPlay}}" label-edge="inside" label-hint="Auto Play"></oj-switch>
+        <oj-switch value="{{spellCorrectEnabled}}" label-edge="inside" label-hint="Spell Correction"></oj-switch>
+        <oj-select-single
+          value="{{ttsEngine}}"
+          label-edge="inside"
+          label-hint="TTS Engine"
+          data="[[ttsEngineOptions]]"
+          required="true"
+          placeholder="Select TTS Engine">
+        </oj-select-single>
+
+        <oj-bind-if test="[[ttsEngine() === 'kokoro']]">
+          <oj-select-single
+            value="{{ttsVoice}}"
+            label-edge="inside"
+            label-hint="Kokoro TTS Voice"
+            data="[[ttsVoiceOptions]]"
+            required="true"
+            placeholder="Choose Voice"
+          ></oj-select-single>
+        </oj-bind-if>
+
+        <oj-c-input-number value="{{playbackRate}}" label-edge="inside" label-hint="Playback Rate" min="0.5" max="3" step="0.1"></oj-c-input-number>
+      </oj-form-layout>
+    </div>
+    <div class="oj-flex-item" style="width:100%;">
+      <oj-c-button size="lg" label="Save" on-oj-action="[[savePreferences]]" style="width:100%;">
+        <span slot="startIcon" class="oj-ux-ico-check-circle-s"></span>
+      </oj-c-button>
+    </div>
+    <div class="oj-flex-item">
+      <oj-bind-if test="[[saved()]]">
+        <span style="color: green;">Preferences saved!</span>
+      </oj-bind-if>
+    </div>
+  </div>
+</div>

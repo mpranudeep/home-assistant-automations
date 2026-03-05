@@ -1,0 +1,57 @@
+<!-- Novels Management Page (Oracle JET implementation) -->
+
+<oj-form-layout>
+  <oj-label for="new-novel-name">Add Novel</oj-label>
+  <oj-input-text id="new-novel-name" value="{{newNovelName}}" placeholder="Novel name"></oj-input-text>
+  <oj-button on-oj-action="[[addNovel]]" chroming="solid">Add Novel</oj-button>
+</oj-form-layout>
+
+<oj-table id="novelsTable"
+  data="[[novels]]"
+  columns='[
+    {"headerText": "Novel Name", "field": "name"},
+    {"headerText": "Sources", "field": "sources"},
+    {"headerText": "Actions", "template": "actionsTemplate"}
+  ]'
+  display="grid"
+  horizontal-grid-visible="enabled"
+  vertical-grid-visible="enabled">
+  <template slot="sources" data-oj-as="row">
+    <!-- Nested Source List -->
+    <oj-table data="[[row.sources]]"
+      columns='[
+        {"headerText": "Source Name", "field": "name"},
+        {"headerText": "Translate", "field": "translateEnabled"},
+        {"headerText": "Refine", "field": "refinementEnabled"},
+        {"headerText": "Actions", "template": "sourceActionsTemplate"},
+        {"headerText": "Progress", "template": "progressTemplate"}
+      ]'
+      horizontal-grid-visible="enabled"
+      vertical-grid-visible="enabled">
+      <template slot="sourceActionsTemplate" data-oj-as="rowSrc">
+        <oj-button on-oj-action="[[deleteSource.bind($parent, $parentContext.rowContext.item, rowSrc)]]" chroming="borderless" display="icons">
+          <span slot="startIcon" class="oj-ux-ico-delete"></span>Delete
+        </oj-button>
+      </template>
+      <template slot="progressTemplate" data-oj-as="rowSrc">
+        <oj-input-text value="{{getProgress(rowSrc)}}" on-oj-value-action="[[setProgress.bind($parent, $parentContext.rowContext.item.id, rowSrc.id)]]" placeholder="Current Chapter"></oj-input-text>
+      </template>
+    </oj-table>
+
+    <oj-form-layout>
+      <oj-label for="new-source-name">Add Source</oj-label>
+      <oj-input-text id="new-source-name" value="{{newSourceName}}" placeholder="Source name"></oj-input-text>
+      <oj-checkboxset value="{{newSourceFlags}}">
+        <oj-option value="translate">Translate</oj-option>
+        <oj-option value="refine">Refine</oj-option>
+      </oj-checkboxset>
+      <oj-button on-oj-action="[[addSource.bind($parent, $parentContext.rowContext.item)]]" chroming="solid">Add Source</oj-button>
+    </oj-form-layout>
+  </template>
+
+  <template slot="actionsTemplate" data-oj-as="row">
+    <oj-button on-oj-action="[[deleteNovel.bind($parent, row)]]" chroming="borderless" display="icons">
+      <span slot="startIcon" class="oj-ux-ico-delete"></span>Delete
+    </oj-button>
+  </template>
+</oj-table>

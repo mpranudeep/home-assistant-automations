@@ -99,7 +99,7 @@
           <div class="oj-flex-bar-end">
             <!-- Responsive Toolbar -->
             <oj-toolbar>
-              <!--oj-menu-button id="userMenu" display="[[smScreen() ? 'icons' : 'all']]" chroming="borderless">
+              <oj-menu-button id="userMenu" display="[[smScreen() ? 'icons' : 'all']]" chroming="borderless">
                 <span><oj-bind-text value="[[userLogin]]"></oj-bind-text></span>
                 <span slot="endIcon" :class="[[{'oj-icon demo-appheader-avatar': smScreen(), 'oj-component-icon oj-button-menu-dropdown-icon': !smScreen()}]]"></span>
                 <oj-menu id="menu1" slot="menu">
@@ -108,19 +108,19 @@
                   <oj-option id="about" value="about">About</oj-option>
                   <oj-option id="out" value="out">Sign Out</oj-option>
                 </oj-menu>
-              </oj-menu-button-->
+              </oj-menu-button>
             </oj-toolbar>
           </div>
         </div>
         <div role="navigation" class="oj-web-applayout-max-width oj-web-applayout-navbar">
-          <!--oj-navigation-list id="navList"
+          <oj-navigation-list id="navList"
                               data="[[navDataProvider]]"
                               :class="[[{'oj-md-condense oj-md-justify-content-flex-end': !smScreen()}]]"
                               display="[[smScreen() ? 'icons' : 'all']]"
                               edge="top"
                               item.renderer="[[oj.KnockoutTemplateUtils.getRenderer('navTemplate', true)]]"
                               selection="{{selection.path}}">
-          </oj-navigation-list-->
+        </oj-navigation-list>
         </div>
       </header>
       <oj-module role="main" class="oj-web-applayout-max-width oj-web-applayout-content" config="[[moduleAdapter.koObservableConfig]]">

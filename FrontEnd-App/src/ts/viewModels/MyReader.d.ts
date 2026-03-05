@@ -27,13 +27,13 @@ declare class MyReaderViewModel {
     loadCounter: number;
     constructor();
     connected(): void;
-    disconnected(): void;
     transitionCompleted(): void;
     loadNextChapter(): Promise<void>;
     navigateToChapter(chapterURL: string, autoPlay: boolean, playbackRate: number): Promise<void>;
     playFromParagraph(pNumber: number): Promise<void>;
     sleep(time: number): Promise<void>;
-    convertToAudioFile(text: string): Promise<string>;
+    convertToAudioFilePiper(text: string): Promise<string>;
+    convertToAudioFileKokoro(text: string): Promise<string>;
     loadChapter(url: string): Promise<void>;
     scrollToTargetAdjusted(element: any): void;
     onLoadURLButtonClicked: (event: any) => void;
@@ -44,5 +44,8 @@ declare class MyReaderViewModel {
     prevButtonClicked: (event: Event) => void;
     pauseAction(): Promise<void>;
     playAction(): void;
+    speakWithBrowserTTS(text: string, rate: number): Promise<void>;
+    private _keydownHandler?;
+    disconnected(): void;
 }
 export = MyReaderViewModel;

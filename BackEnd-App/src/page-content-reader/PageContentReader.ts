@@ -4,15 +4,12 @@ import { Logger } from "@nestjs/common";
 import { convert } from "html-to-text";
 import puppeteer from "puppeteer";
 import type { Browser, Page } from "puppeteer";
-import { DOMParser as XmlDomParser } from "xmldom";
-import xpath from "xpath";
 import * as os from "os";
 import axios from "axios";
 import { SimpleCache } from "../common/SimpleCache";
 import { GoogleGenAI } from "@google/genai";
 import { promises as fs } from "fs";
 import dotenv from 'dotenv';
-import * as cheerio from "cheerio";
 
 dotenv.config();
 
@@ -127,7 +124,7 @@ export default class PageContentReader {
     try {
       let title: string;
       let lines: string[] = [];
-      let xmlDom: any;
+      let documentDom: any;
 
       if (url.includes("wtr-lab.com")) {
         // Extract identifiers
@@ -162,13 +159,13 @@ export default class PageContentReader {
         lines = data?.data?.data?.body ?? [];
         title = `Chapter ${chapterNo}`;
 
-        // Minimal XML DOM to keep handler consistent
-        xmlDom = new XmlDomParser().parseFromString("<root></root>");
+        // Minimal DOM to keep handler signature consistent
+        documentDom = new JSDOM("<root></root>", { url }).window.document;
       } else {
         // Default scraping fallback
         const html = await this.fetchHtmlWithFallback(url);
-        xmlDom = new XmlDomParser().parseFromString(html);
         const dom = new JSDOM(html, { url });
+        documentDom = dom.window.document;
         const reader = new Readability(dom.window.document);
         const article = reader.parse();
 
@@ -185,7 +182,7 @@ export default class PageContentReader {
 
       // ✅ Unified handler
       const siteHandler = this.getSiteHandler(url);
-      const { content, nextChapterURL } = await siteHandler(xmlDom, url, lines, spellCorrectEnabled);
+      const { content, nextChapterURL } = await siteHandler(documentDom, url, lines, spellCorrectEnabled);
 
       this.log.debug(`Title: ${title}`);
       this.log.debug(`Content length: ${content.length} chars`);
@@ -256,7 +253,7 @@ export default class PageContentReader {
   private getSiteHandler(
     url: string
   ): (
-    xmlDom: any,
+    documentDom: any,
     baseUrl: string,
     lines: string[],
     spellCorrectEnabled: boolean
@@ -275,23 +272,18 @@ export default class PageContentReader {
     });
   }
 
-  private async handleWuxiaWorld(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
-    // Use XPath to locate <a> with a child <button> whose text contains "next chapter" (case-insensitive)
+  private async handleWuxiaWorld(documentDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
     let nextChapterURL: string | null = null;
 
-    // XPath: find <a> with a <button> descendant (or child) whose normalized text contains "next chapter" (case-insensitive)
-    // 1. Select all <a> elements with descendant <button> whose normalized text matches
-    // 2. Prefer descendant to allow nested buttons
+    const links = Array.from(documentDom.querySelectorAll("a")) as any[];
+    const nextLink = links.find((aElem) => {
+      const button = aElem.querySelector("button");
+      const text = (button?.textContent || "").trim().toLowerCase();
+      return text.includes("next chapter");
+    });
 
-    // This XPath checks buttons that are descendants for broader matching
-    const nodes = xpath.select(
-      "//a[.//button[contains(translate(normalize-space(string(.)), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'next chapter')]]",
-      xmlDom
-    ) as any[];
-
-    if (nodes && nodes.length > 0) {
-      const aElem = nodes[0];
-      const href = aElem.getAttribute("href");
+    if (nextLink) {
+      const href = nextLink.getAttribute("href");
       if (href) {
         try {
           nextChapterURL = new URL(href, baseUrl).toString();
@@ -310,10 +302,10 @@ export default class PageContentReader {
     };
   }
 
-   private async handleNovel122(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
-    const $ = cheerio.load(xmlDom.toString());
-    const next = $(".chap-select a").last();
-    const href = next.attr("href");
+   private async handleNovel122(documentDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
+    const links = documentDom.querySelectorAll(".chap-select a");
+    const next = links.length > 0 ? links[links.length - 1] : null;
+    const href = next?.getAttribute("href") ?? null;
     const nextChapterURL = href ? new URL(href, baseUrl).toString() : null;
     let contentRaw = lines.join("\n");
     let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
@@ -341,12 +333,14 @@ export default class PageContentReader {
     return text;
   }
 
-  private async handleRoyalRoad(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
-    const title = xpath.select1("//div[contains(@class, \"fic-header\")]//h1", xmlDom) as any;
-    let contentRaw =  title.textContent.trim() + ' \n' + lines.join("\n");
+  private async handleRoyalRoad(documentDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
+    const title = documentDom.querySelector("div.fic-header h1")?.textContent?.trim() ?? "";
+    let contentRaw =  title + ' \n' + lines.join("\n");
     let refined = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
 
-    let nextChapter = xpath.select1("//a[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'next chapter')]",xmlDom) as any;
+    const nextChapter = Array.from(documentDom.querySelectorAll("a")).find((a: any) =>
+      String(a.textContent || "").trim().toLowerCase().includes("next chapter")
+    ) as any;
     const href = nextChapter?.getAttribute("href") ?? null;
     const nextChapterURL = href ? new URL(href, baseUrl).toString() : null;
 
@@ -358,8 +352,8 @@ export default class PageContentReader {
 
 
 
-  private async handleNovelBin(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
-    const node = xpath.select1("//a[@id='next_chap']", xmlDom) as any;
+  private async handleNovelBin(documentDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
+    const node = documentDom.querySelector("a#next_chap") as any;
     let contentRaw = lines.join("\n");
     let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
     return {
@@ -368,20 +362,20 @@ export default class PageContentReader {
     };
   }
 
-  private async handleDXMWX(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
+  private async handleDXMWX(documentDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
     let filtered = [];
     for (const line of lines) {
       if (line.toLowerCase().includes("tap the screen to use advanced tools tip"))
         break;
       filtered.push(line);
     }
-    const nextChapterURL = await this.extractDXMWXNext(xmlDom, baseUrl);
+    const nextChapterURL = await this.extractDXMWXNext(documentDom, baseUrl);
     let contentRaw = filtered.join("\n");
     let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
     return { content, nextChapterURL };
   }
 
-  private async handleFanMTL(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
+  private async handleFanMTL(documentDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
     let filtered = [];
     for (const line of lines) {
       if (line.toLowerCase().includes("YOU'LL ALSO LIKE".toLowerCase())) break;
@@ -389,24 +383,21 @@ export default class PageContentReader {
     }
     let contentRaw = filtered.join("\n");
     let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
-    const node = xpath.select1(
-      "//*[contains(@class, 'chnav') and contains(@class, 'next')]",
-      xmlDom
-    ) as any;
+    const node = documentDom.querySelector(".chnav.next") as any;
     const href = node?.getAttribute("href") ?? null;
     const nextChapterURL = href ? new URL(href, baseUrl).toString() : null;
     return { content, nextChapterURL };
   }
 
-  private async handle69shuba(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
+  private async handle69shuba(documentDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
     let contentRaw = lines.join("\n");
     let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
-    const node = xpath.select1("//div[@class='page1']/a[4]", xmlDom) as any;
+    const node = documentDom.querySelector("div.page1 a:nth-of-type(4)") as any;
     const nextChapterURL = node?.getAttribute("href") ?? null;
     return { content, nextChapterURL };
   }
 
-  private async handleWTRLab(xmlDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
+  private async handleWTRLab(documentDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
     let filtered = [];
     for (const line of lines) {
       if (
@@ -432,11 +423,11 @@ export default class PageContentReader {
     return { content, nextChapterURL };
   }
 
-  private async extractDXMWXNext(xmlDom: any, baseUrl: string) {
-    const nodes = xpath.select("//div[@onclick='JumpNext();']/a", xmlDom) as any[];
-    if (!nodes?.length) return null;
+  private async extractDXMWXNext(documentDom: any, baseUrl: string) {
+    const node = documentDom.querySelector("div[onclick='JumpNext();'] > a") as any;
+    if (!node) return null;
 
-    const href = nodes[0]?.getAttribute("href");
+    const href = node.getAttribute("href");
     return href?.startsWith("http") ? href : new URL(href ?? "", baseUrl).toString();
   }
 
@@ -458,7 +449,8 @@ export default class PageContentReader {
     return text
       .split("\n")
       .map((l) => l.trim())
-      .filter((l) => l.length > 0);
+      .filter((l) => l.length > 0)
+      .filter((l) => !l.toLowerCase().includes("pubfuture"));
   }
 
   private splitIntoThree<T>(arr: T[]): [T[], T[], T[]] {
