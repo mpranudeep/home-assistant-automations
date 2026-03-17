@@ -10,30 +10,19 @@ WORKDIR /app
 ENV NPM_CONFIG_CACHE=/root/.npm
 
 # Install system dependencies (replaces Alpine equivalents)
-RUN apt-get update && apt-get install -y \
-    chromium \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
-    fonts-freefont-ttf \
-    libnss3 \
-    libfreetype6 \
-    libharfbuzz0b \
     python3 \
     make \
     g++ \
     bash \
-    libusb-1.0-0-dev \
     pkg-config \
-    && npm install -g typescript @oracle/ojet-cli \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy only package.json files first to leverage Docker cache for dependencies
 COPY BackEnd-App/package*.json ./BackEnd-App/
 COPY FrontEnd-App/package*.json ./FrontEnd-App/
-
-# Seed dependency cache from local build context (prepared by build_and_push.sh)
-COPY .npm-cache/BackEnd-node_modules/ /app/BackEnd-App/node_modules/
-COPY .npm-cache/FrontEnd-node_modules/ /app/FrontEnd-App/node_modules/
 
 # Install backend dependencies
 RUN cd /app/BackEnd-App && npm install --verbose
@@ -46,13 +35,13 @@ COPY BackEnd-App /app/BackEnd-App
 COPY FrontEnd-App /app/FrontEnd-App
 
 # Compile backend
-RUN cd /app/BackEnd-App && tsc
+RUN cd /app/BackEnd-App && npx tsc
 
 # Build frontend (optional)
-RUN cd /app/FrontEnd-App && tsc && ojet build
+RUN cd /app/FrontEnd-App && npx tsc && npx ojet build
 
 # Ensure Piper binary is executable
-RUN chmod +x /app/BackEnd-App/rundata/piper/piper/piper
+RUN if [ -f /app/BackEnd-App/rundata/piper/piper/piper ]; then chmod +x /app/BackEnd-App/rundata/piper/piper/piper; fi
 
 # Expose necessary ports
 EXPOSE 5555

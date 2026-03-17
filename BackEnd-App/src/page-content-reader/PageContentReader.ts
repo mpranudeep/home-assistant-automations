@@ -2,9 +2,6 @@ import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import { Logger } from "@nestjs/common";
 import { convert } from "html-to-text";
-import puppeteer from "puppeteer";
-import type { Browser, Page } from "puppeteer";
-import * as os from "os";
 import axios from "axios";
 import { SimpleCache } from "../common/SimpleCache";
 import { GoogleGenAI } from "@google/genai";
@@ -34,63 +31,6 @@ const contentCache = new SimpleCache<{
 
 export default class PageContentReader {
   private log = new Logger(PageContentReader.name);
-  private browser: Browser | null = null;
-  private page: Page | null = null;
-  private browserInUse = false;
-  private browserCloseTimeout: NodeJS.Timeout | null = null;
-
-  // -------------------
-  // INITIALIZATION & CLEANUP
-  // -------------------
-  private async initializeBrowser() {
-    if (this.browser && this.page) {
-      this.browserInUse = true;
-      if (this.browserCloseTimeout) {
-        clearTimeout(this.browserCloseTimeout);
-        this.browserCloseTimeout = null;
-      }
-      return;
-    }
-
-    const isWindows = os.platform() === "win32";
-    let executablePath: string | undefined = undefined;
-    let args: string[] = [];
-
-    if (!isWindows) {
-      executablePath = "/usr/bin/chromium";
-      args = ["--no-sandbox", "--disable-setuid-sandbox"];
-    }
-
-    this.browser = await puppeteer.launch({
-      headless: false,
-      executablePath,
-      args,
-    });
-    this.page = await this.browser.newPage();
-    await this.page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-      "AppleWebKit/537.36 (KHTML, like Gecko) " +
-      "Chrome/120.0.0.0 Safari/537.36"
-    );
-    this.browserInUse = true;
-  }
-
-  private async releaseBrowser() {
-    this.browserInUse = false;
-    // Only close after a period of inactivity (prevent accidental rapid open/close)
-    if (this.browserCloseTimeout) clearTimeout(this.browserCloseTimeout);
-    this.browserCloseTimeout = setTimeout(async () => {
-      try {
-        if (this.browser) {
-          await this.browser.close();
-          this.browser = null;
-          this.page = null;
-        }
-      } catch (e: any) {
-        this.log.warn("Failed to close Puppeteer browser cleanly: " + (e.stack || e.message));
-      }
-    }, 120000); // 2 minutes inactivity timeout
-  }
 
   // -------------------
   // PUBLIC ENTRYPOINT
@@ -120,7 +60,7 @@ export default class PageContentReader {
   // -------------------
   // SCRAPING + PARSING
   // -------------------
-  private async scrapeAndProcessContent(url: string, spellCorrectEnabled: boolean = false) {
+  public async scrapeAndProcessContent(url: string, spellCorrectEnabled: boolean = false) {
     try {
       let title: string;
       let lines: string[] = [];
@@ -137,7 +77,7 @@ export default class PageContentReader {
         const rawId = parseInt(match[1], 10);
         const chapterNo = parseInt(match[2], 10);
         const payload = {
-          translate: "web",
+          translate: "ai",
           language: "en",
           raw_id: rawId,
           chapter_no: chapterNo,
@@ -155,7 +95,12 @@ export default class PageContentReader {
           throw new Error(`wtr-lab API failed: ${response.statusText}`);
         }
 
+        
+
         const data = await response.json();
+        
+        // console.log(JSON.stringify(data));
+
         lines = data?.data?.data?.body ?? [];
         title = `Chapter ${chapterNo}`;
 
@@ -228,23 +173,6 @@ export default class PageContentReader {
       maxTimeout: 60000,
     });
     return response.data.solution.response;
-  }
-
-  private async fetchPageContentWithPuppeteer(url: string): Promise<string> {
-    await this.initializeBrowser();
-    try {
-      await this.page!.goto(url, {
-        waitUntil: "domcontentloaded",
-        timeout: 30000,
-      });
-      return await this.page!.content();
-    } catch (err: any) {
-      this.log.warn(`Puppeteer error/navigator timeout: ${err.message}`);
-      throw err;
-    } finally {
-      // Release browser for idle-close
-      await this.releaseBrowser();
-    }
   }
 
   // -------------------
@@ -400,12 +328,15 @@ export default class PageContentReader {
   private async handleWTRLab(documentDom: any, baseUrl: string, lines: string[], spellCorrectEnabled: boolean) {
     let filtered = [];
     for (const line of lines) {
+      const cleanedLine = this.cleanWTRLabLine(line);
+      if (!cleanedLine) continue;
+
       if (
-        line.toLowerCase().includes("(end of this chapter)") ||
-        line.toLowerCase().includes("tap the screen to use advanced tools tip")
+        cleanedLine.toLowerCase().includes("(end of this chapter)") ||
+        cleanedLine.toLowerCase().includes("tap the screen to use advanced tools tip")
       )
         break;
-      filtered.push(line);
+      filtered.push(cleanedLine);
     }
     let contentRaw = filtered.join("\n");
     let content = await this.refineWithFallback(contentRaw, spellCorrectEnabled);
@@ -451,6 +382,14 @@ export default class PageContentReader {
       .map((l) => l.trim())
       .filter((l) => l.length > 0)
       .filter((l) => !l.toLowerCase().includes("pubfuture"));
+  }
+
+  private cleanWTRLabLine(line: string): string {
+    return line
+      .replace(/※\s*\d+\s*⛬/g, "")
+      .replace(/[※⛬]/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
   }
 
   private splitIntoThree<T>(arr: T[]): [T[], T[], T[]] {

@@ -115,19 +115,7 @@ define(["require", "exports", "../accUtils", "../appUtils", "knockout", "oj-c/in
         }
         navigateToChapter(chapterURL, autoPlay, playbackRate) {
             return __awaiter(this, void 0, void 0, function* () {
-                let self = this;
                 if (chapterURL) {
-                    const ttsEngine = localStorage.getItem("ttsEngine") || "piper";
-                    if (ttsEngine === "piper") {
-                        for (let eachP of self.novelParagraphs()) {
-                            let eachPO = eachP();
-                            if (eachPO.audioFile) {
-                                let filePath = yield eachPO.audioFile;
-                                let deleteURL = `${this.config.hostName}/api/text-to-speech/delete-file?filePath=${filePath}`;
-                                yield fetch(deleteURL);
-                            }
-                        }
-                    }
                     let url = new URL(window.location.href);
                     url.searchParams.set("inputURL", chapterURL);
                     window.location.href = url.toString();
@@ -223,9 +211,11 @@ define(["require", "exports", "../accUtils", "../appUtils", "knockout", "oj-c/in
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ text })
                         });
-                        let response = yield convertedResponse.json();
-                        let filePath = encodeURI(response.audioFilePath);
-                        let audioFileURL = `${this.config.hostName}/api/text-to-speech/get-file?filePath=${filePath}`;
+                        if (!convertedResponse.ok) {
+                            throw new Error(`Piper TTS request failed with status ${convertedResponse.status}`);
+                        }
+                        const audioBlob = yield convertedResponse.blob();
+                        const audioFileURL = URL.createObjectURL(audioBlob);
                         return audioFileURL;
                     }
                     catch (ex) {

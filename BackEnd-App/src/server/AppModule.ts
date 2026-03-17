@@ -24,7 +24,7 @@ import { ChapterProgress } from '../apis/entities/ChapterProgress';
       rootPath: join(__dirname, '..', '..', '..', 'FrontEnd-App', 'web'),
       serveRoot: '/ui', // Oracle JET will be served under /ui/
     }),
-    DnsServerModule,
+    // DnsServerModule,
     // NovelSourceModule,
     // TypeOrmModule.forRoot({
     //   type: 'sqlite',

@@ -153,19 +153,7 @@ class MyReaderViewModel {
   }
 
   async navigateToChapter(chapterURL: string,autoPlay:boolean, playbackRate:number) {
-    let self = this;
     if (chapterURL) {
-      const ttsEngine = localStorage.getItem("ttsEngine") || "piper";
-      if (ttsEngine === "piper") {
-        for (let eachP of self.novelParagraphs()) {
-          let eachPO: Paragraph = eachP();
-          if (eachPO.audioFile) {
-            let filePath = await eachPO.audioFile;
-            let deleteURL = `${this.config.hostName}/api/text-to-speech/delete-file?filePath=${filePath}`;
-            await fetch(deleteURL);
-          }
-        }
-      }
       let url = new URL(window.location.href);
       url.searchParams.set("inputURL", chapterURL);
       window.location.href = url.toString();
@@ -176,10 +164,15 @@ class MyReaderViewModel {
     let self = this;
     this.audioPlayer?.pause();
 
+    if (!Number.isFinite(pNumber)) {
+      pNumber = 0;
+    }
+
+    pNumber = Math.floor(pNumber);
+
     if (pNumber < 0) {
       pNumber = 0;
     }
-    this.currentLineNumber(pNumber);
 
     if (this.novelParagraphs().length == 0) {
       console.log("Chapter not loaded");
@@ -190,10 +183,12 @@ class MyReaderViewModel {
       return;
     }
 
-    if (this.currentLineNumber() >= this.novelParagraphs().length) {
+    if (pNumber >= this.novelParagraphs().length) {
       this.loadNextChapter();
       return;
     }
+
+    this.updateCurrentLineAndScroll(pNumber);
 
     if(this.loadCounter<10){
         this.loadCounter=this.loadCounter+1;
@@ -223,12 +218,16 @@ class MyReaderViewModel {
       // @ts-ignore
       await self.speakWithBrowserTTS(currentP.text, parseFloat(self.playbackRate()));
 
+      if (!this.playerControls.playEnabled()) {
+        return;
+      }
+
       // On speech end, advance to next
-      this.currentLineNumber(pNumber + 1);
-      if (this.currentLineNumber() < this.novelParagraphs().length) {
+      const nextParagraph = pNumber + 1;
+      if (nextParagraph < this.novelParagraphs().length) {
         // If there are more paragraphs, continue
         if (this.playerControls.playEnabled()) {
-          await this.playFromParagraph(this.currentLineNumber());
+          await this.playFromParagraph(nextParagraph);
         }
       } else {
         // End of chapter
@@ -257,9 +256,6 @@ class MyReaderViewModel {
     // @ts-ignore
     self.audioPlayer.playbackRate = parseFloat(self.playbackRate());
     await self.audioPlayer?.play();
-
-    let targetP = document.getElementById('paragraph-' + (pNumber + 1));
-    self.scrollToTargetAdjusted(targetP);
   }
 
   async sleep(time: number): Promise<void> {
@@ -276,9 +272,12 @@ class MyReaderViewModel {
           body: JSON.stringify({ text })
         });
 
-        let response = await convertedResponse.json();
-        let filePath = encodeURI(response.audioFilePath);
-        let audioFileURL = `${this.config.hostName}/api/text-to-speech/get-file?filePath=${filePath}`;
+        if (!convertedResponse.ok) {
+          throw new Error(`Piper TTS request failed with status ${convertedResponse.status}`);
+        }
+
+        const audioBlob = await convertedResponse.blob();
+        const audioFileURL = URL.createObjectURL(audioBlob);
         return audioFileURL;
       } catch (ex) {
         console.log(ex);
@@ -367,10 +366,12 @@ class MyReaderViewModel {
     // Prefer modern event delegation if possible (instead of jQuery).
     document.querySelectorAll('.paragraph').forEach((el) => {
       el.addEventListener('click', (event: Event) => {
-        if (event.target instanceof HTMLElement) {
-          console.log("P Clicked " + event.target.id);
-          let paragphNumber: number = parseInt(event.target.id.replace("paragraph-", ""));
-          self.playFromParagraph(paragphNumber - 1);
+        if (event.currentTarget instanceof HTMLElement) {
+          console.log("P Clicked " + event.currentTarget.id);
+          let paragphNumber: number = parseInt(event.currentTarget.id.replace("paragraph-", ""), 10);
+          if (!Number.isNaN(paragphNumber)) {
+            self.playFromParagraph(paragphNumber - 1);
+          }
         }
       });
     });
@@ -380,7 +381,19 @@ class MyReaderViewModel {
     }
   }
 
-  scrollToTargetAdjusted(element: any) {
+  private updateCurrentLineAndScroll(pNumber: number) {
+    this.currentLineNumber(pNumber);
+    requestAnimationFrame(() => {
+      const targetP = document.getElementById('paragraph-' + (pNumber + 1));
+      this.scrollToTargetAdjusted(targetP);
+    });
+  }
+
+  scrollToTargetAdjusted(element: HTMLElement | null) {
+    if (!element) {
+      return;
+    }
+
     var headerOffset = 150;
     var elementPosition = element.getBoundingClientRect().top;
     var offsetPosition = elementPosition + window.pageYOffset - headerOffset;
@@ -424,6 +437,7 @@ class MyReaderViewModel {
   async pauseAction() {
     let self = this;
     await self.audioPlayer.pause();
+    window.speechSynthesis.cancel();
     self.playerControls.playEnabled(false);
   }
 
